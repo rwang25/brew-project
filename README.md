@@ -1,6 +1,13 @@
 # Brew Tracker
 
-A local Streamlit app for tracking homebrew batches.
+A self-hosted app for tracking mead (and other) brews: conditions, times, and ingredients.
+
+## Stack
+
+- **Backend**: FastAPI + SQLModel, backed by SQLite (`brews.db`).
+- **Frontend**: React + TypeScript + Vite, Tailwind + shadcn/ui.
+
+The legacy Streamlit app (`app.py`) is kept for reference during the migration but is no longer the primary UI.
 
 ## Features
 
@@ -12,40 +19,41 @@ A local Streamlit app for tracking homebrew batches.
   `(original gravity - final gravity) * 131.25`
 - Status tracking from planning through completion
 - Process and tasting notes
-- CSV export
 - Persistent SQLite storage in `brews.db`
 
-## Run locally
+## Run locally (development)
 
-1. Install Python 3.10 or newer.
-2. Open a terminal in this folder.
-3. Create a virtual environment:
+Backend:
 
-   macOS/Linux:
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
+```bash
+cd backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-   Windows:
-   ```powershell
-   py -m venv .venv
-   .venv\Scripts\activate
-   ```
+Frontend (separate terminal):
 
-4. Install dependencies:
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+Open the URL Vite prints (defaults to `http://localhost:5173`). API requests are proxied to the backend on port 8000.
 
-5. Start the app:
+## Run in production (e.g. a home server / Raspberry Pi)
 
-   ```bash
-   streamlit run app.py
-   ```
+Build the frontend once, then run only the backend — it serves the built React app and the API from a single process/port:
 
-The database is created automatically in the same folder as `app.py`.
+```bash
+cd frontend && npm install && npm run build
+cd ../backend && source .venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Visit `http://<server-ip>:8000` from any device on your network.
+
+The database is created automatically at the repo root (`brews.db`) the first time the backend starts.
 
 ## Backup
 
