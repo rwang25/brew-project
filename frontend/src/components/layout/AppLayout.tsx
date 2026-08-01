@@ -1,10 +1,11 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { Beaker, DollarSign, LayoutDashboard, NotebookText, Plus } from 'lucide-react'
+import { MeadDropIcon } from '@/components/MeadDropIcon'
+import { DollarSign, NotebookText, Plus, Rows3 } from 'lucide-react'
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/brews/new', label: 'New brew', icon: Plus, end: false },
+  { to: '/', label: 'Batches', icon: Rows3, end: true },
+  { to: '/brews/new', label: 'New batch', icon: Plus, end: false },
   { to: '/recipes', label: 'Recipes', icon: NotebookText, end: false },
   { to: '/prices', label: 'Prices', icon: DollarSign, end: false },
 ]
@@ -14,10 +15,10 @@ export function AppLayout() {
     <div className="min-h-svh flex flex-col md:flex-row">
       <aside className="border-b md:border-b-0 md:border-r bg-card md:w-56 md:min-h-svh shrink-0">
         <div className="flex items-center gap-2 px-4 py-4">
-          <Beaker className="size-5 text-primary" />
-          <span className="font-semibold tracking-tight">Brew Tracker</span>
+          <MeadDropIcon className="size-5 text-primary" />
+          <span className="font-serif text-lg font-medium tracking-tight">Brew Tracker</span>
         </div>
-        <nav className="flex md:flex-col gap-1 px-2 pb-2 md:pb-4">
+        <nav className="flex flex-wrap md:flex-col gap-1 px-2 pb-2 md:pb-4">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}

@@ -7,6 +7,7 @@ from ..database import get_session
 from ..models import (
     Brew,
     Ingredient,
+    IngredientPrice,
     NutrientAddition,
     Recipe,
     RecipeIngredient,
@@ -25,9 +26,36 @@ def get_recipe_or_404(recipe_id: int, session: Session) -> Recipe:
     return recipe
 
 
-@router.get("/recipes", response_model=List[Recipe])
-def list_recipes(session: Session = Depends(get_session)) -> List[Recipe]:
-    return list(session.exec(select(Recipe).order_by(Recipe.name)))
+def price_lookup(session: Session) -> dict:
+    prices = session.exec(select(IngredientPrice))
+    return {(p.ingredient_name.lower(), p.unit.lower()): p.unit_cost for p in prices}
+
+
+def estimate_ingredient_cost(ingredient: RecipeIngredient, prices: dict) -> float | None:
+    if ingredient.amount is None or not ingredient.unit:
+        return None
+    unit_cost = prices.get((ingredient.ingredient_name.lower(), ingredient.unit.lower()))
+    if unit_cost is None:
+        return None
+    return ingredient.amount * unit_cost
+
+
+@router.get("/recipes", response_model=None)
+def list_recipes(session: Session = Depends(get_session)) -> List[dict]:
+    recipes = list(session.exec(select(Recipe).order_by(Recipe.name)))
+    prices = price_lookup(session)
+
+    all_ingredients = list(session.exec(select(RecipeIngredient)))
+    cost_by_recipe: dict[int, float] = {}
+    for ing in all_ingredients:
+        cost = estimate_ingredient_cost(ing, prices)
+        if cost is not None:
+            cost_by_recipe[ing.recipe_id] = cost_by_recipe.get(ing.recipe_id, 0) + cost
+
+    return [
+        {**recipe.model_dump(), "estimated_cost": cost_by_recipe.get(recipe.id)}
+        for recipe in recipes
+    ]
 
 
 @router.get("/recipes/{recipe_id}", response_model=Recipe)
@@ -60,6 +88,16 @@ def list_recipe_nutrient_schedule(
 @router.delete("/recipes/{recipe_id}", status_code=204)
 def delete_recipe(recipe_id: int, session: Session = Depends(get_session)) -> None:
     recipe = get_recipe_or_404(recipe_id, session)
+
+    for ingredient in session.exec(
+        select(RecipeIngredient).where(RecipeIngredient.recipe_id == recipe_id)
+    ):
+        session.delete(ingredient)
+    for nutrient in session.exec(
+        select(RecipeNutrientAddition).where(RecipeNutrientAddition.recipe_id == recipe_id)
+    ):
+        session.delete(nutrient)
+
     session.delete(recipe)
     session.commit()
 

@@ -73,9 +73,10 @@ export interface IngredientCreateInput {
   stage?: string | null
   addition_date?: string | null
   unit_cost?: number | null
-  total_cost?: number | null
   notes?: string | null
 }
+
+export type IngredientUpdateInput = IngredientCreateInput
 
 export interface GravityReading {
   id: number
@@ -130,6 +131,10 @@ export interface Recipe {
   process_notes: string | null
   created_at: string
   updated_at: string
+}
+
+export interface RecipeSummary extends Recipe {
+  estimated_cost: number | null
 }
 
 export interface RecipeIngredient {

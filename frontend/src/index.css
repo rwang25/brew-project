@@ -2,47 +2,57 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Palette: a home meadery's cellar at night — dark oak and glass, lit by the
+  honey-amber of whatever's fermenting. Light mode swaps the cellar for warm
+  daylight through a kitchen window, same amber, same oak, more parchment.
+*/
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+
+  --background: #F4ECDA;
+  --foreground: #241A12;
+  --card: #FBF6EA;
+  --card-foreground: #241A12;
+  --popover: #FBF6EA;
+  --popover-foreground: #241A12;
+  --primary: #D98D2C;
+  --primary-foreground: #241A12;
+  --secondary: #E9DBBE;
+  --secondary-foreground: #241A12;
+  --muted: #ECE0C7;
+  --muted-foreground: #7C6C51;
+  --accent: #F0DFAE;
+  --accent-foreground: #4A2E12;
+  --destructive: #A6402A;
+  --border: #DFCEA6;
+  --input: #DFCEA6;
+  --ring: #D98D2C;
+
+  --ferment-empty: #E4D6B4;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: #1B140E;
+  --foreground: #F1E7D3;
+  --card: #251C14;
+  --card-foreground: #F1E7D3;
+  --popover: #251C14;
+  --popover-foreground: #F1E7D3;
+  --primary: #E8A33D;
+  --primary-foreground: #1B140E;
+  --secondary: #362A1D;
+  --secondary-foreground: #F1E7D3;
+  --muted: #2E2418;
+  --muted-foreground: #B7A588;
+  --accent: #3B2E1C;
+  --accent-foreground: #F4C868;
+  --destructive: #C1543A;
+  --border: #3D2F20;
+  --input: #3D2F20;
+  --ring: #E8A33D;
+
+  --ferment-empty: #33281B;
 }
 
 @theme inline {
@@ -64,10 +74,15 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-ferment-empty: var(--ferment-empty);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 @layer base {
@@ -75,6 +90,10 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
   }
 }

@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { costPerBottle } from '@/lib/units'
 import { Trash2 } from 'lucide-react'
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -61,7 +62,7 @@ export function RecipeList() {
 
   return (
     <div className="max-w-5xl">
-      <h1 className="text-2xl font-semibold tracking-tight mb-6">Recipes</h1>
+      <h1 className="font-serif text-3xl font-medium tracking-tight mb-6">Recipes</h1>
 
       {isLoading && <p className="text-muted-foreground">Loading recipes…</p>}
 
@@ -72,34 +73,49 @@ export function RecipeList() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {recipes?.map((recipe) => (
-          <Card key={recipe.id}>
-            <CardHeader>
-              <CardTitle className="text-base">{recipe.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-3">
-              <p>{recipe.style || recipe.brew_type}</p>
-              <div className="flex gap-4">
-                {recipe.batch_size != null && (
-                  <span>
-                    {recipe.batch_size} {recipe.batch_size_unit}
-                  </span>
+        {recipes?.map((recipe) => {
+          const perBottle = costPerBottle(
+            recipe.estimated_cost,
+            recipe.batch_size,
+            recipe.batch_size_unit,
+          )
+          return (
+            <Card key={recipe.id}>
+              <CardHeader>
+                <CardTitle className="font-serif text-lg font-medium">{recipe.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <p>{recipe.style || recipe.brew_type}</p>
+                <div className="flex gap-4 font-mono text-xs">
+                  {recipe.batch_size != null && (
+                    <span>
+                      {recipe.batch_size} {recipe.batch_size_unit}
+                    </span>
+                  )}
+                  {recipe.target_abv != null && <span>{recipe.target_abv}% target ABV</span>}
+                </div>
+                {recipe.estimated_cost != null && (
+                  <div className="font-mono text-xs">
+                    <span className="font-medium text-foreground">
+                      ${recipe.estimated_cost.toFixed(2)} estimated
+                    </span>
+                    {perBottle != null && <span> · ${perBottle.toFixed(2)}/bottle</span>}
+                  </div>
                 )}
-                {recipe.target_abv != null && <span>{recipe.target_abv}% target ABV</span>}
-              </div>
-              <div className="flex items-center gap-2 pt-1">
-                <StartBrewDialog recipe={recipe} />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteRecipe.mutate(recipe.id)}
-                >
-                  <Trash2 className="size-4 text-destructive" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="flex items-center gap-2 pt-1">
+                  <StartBrewDialog recipe={recipe} />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteRecipe.mutate(recipe.id)}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )
