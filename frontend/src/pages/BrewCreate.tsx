@@ -65,7 +65,7 @@ export function BrewCreate() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-semibold tracking-tight mb-6">Add a brew</h1>
+      <h1 className="font-serif text-3xl font-medium tracking-tight mb-6">Start a new batch</h1>
       <Card>
         <CardHeader>
           <CardTitle>Batch details</CardTitle>

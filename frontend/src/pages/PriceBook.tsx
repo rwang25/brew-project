@@ -44,7 +44,7 @@ export function PriceBook() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-semibold tracking-tight mb-2">Ingredient prices</h1>
+      <h1 className="font-serif text-3xl font-medium tracking-tight mb-2">Ingredient prices</h1>
       <p className="text-muted-foreground text-sm mb-6">
         Set a cost per unit once — matching ingredient names on a batch auto-fill from here,
         even when you bought it in bulk across multiple batches.

@@ -10,12 +10,14 @@ import type {
   Ingredient,
   IngredientCreateInput,
   IngredientPrice,
+  IngredientUpdateInput,
   Meta,
   NutrientAddition,
   NutrientAdditionCreateInput,
   Recipe,
   RecipeIngredient,
   RecipeNutrientAddition,
+  RecipeSummary,
   Reminders,
 } from './types'
 
@@ -75,6 +77,16 @@ export function useAddIngredient(brewId: number) {
   return useMutation({
     mutationFn: (input: IngredientCreateInput) =>
       api.post<Ingredient>(`/brews/${brewId}/ingredients`, input),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['brews', brewId, 'ingredients'] }),
+  })
+}
+
+export function useUpdateIngredient(brewId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, input }: { id: number; input: IngredientUpdateInput }) =>
+      api.put<Ingredient>(`/ingredients/${id}`, input),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['brews', brewId, 'ingredients'] }),
   })
@@ -170,7 +182,10 @@ export function useDeleteNutrientAddition(brewId: number) {
 }
 
 export function useRecipes() {
-  return useQuery({ queryKey: ['recipes'], queryFn: () => api.get<Recipe[]>('/recipes') })
+  return useQuery({
+    queryKey: ['recipes'],
+    queryFn: () => api.get<RecipeSummary[]>('/recipes'),
+  })
 }
 
 export function useRecipe(id: number | undefined) {

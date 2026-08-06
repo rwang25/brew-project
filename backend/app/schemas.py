@@ -50,7 +50,17 @@ class IngredientCreate(SQLModel):
     stage: Optional[str] = None
     addition_date: Optional[str] = None
     unit_cost: Optional[float] = None
-    total_cost: Optional[float] = None
+    notes: Optional[str] = None
+
+
+class IngredientUpdate(SQLModel):
+    ingredient_name: str
+    amount: Optional[float] = None
+    unit: Optional[str] = None
+    category: Optional[str] = None
+    stage: Optional[str] = None
+    addition_date: Optional[str] = None
+    unit_cost: Optional[float] = None
     notes: Optional[str] = None
 
 

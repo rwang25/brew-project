@@ -1,0 +1,8 @@
+services:
+  brew-tracker:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./brews.db:/app/brews.db
+    restart: unless-stopped

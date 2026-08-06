@@ -10,18 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 import { costPerBottle } from '@/lib/units'
+import { STATUS_BADGE_CLASS, fermentationProgress, isDiscarded } from '@/lib/status'
 import { RemindersPanel } from '@/pages/RemindersPanel'
-
-const STATUS_VARIANT: Record<string, string> = {
-  Planning: 'bg-muted text-muted-foreground',
-  'Primary fermentation': 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
-  'Secondary fermentation': 'bg-blue-500/15 text-blue-700 dark:text-blue-400',
-  Conditioning: 'bg-purple-500/15 text-purple-700 dark:text-purple-400',
-  Bottled: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
-  Completed: 'bg-green-600/15 text-green-700 dark:text-green-400',
-  Discarded: 'bg-red-500/15 text-red-700 dark:text-red-400',
-}
 
 export function BrewList() {
   const { data: brews, isLoading } = useBrews()
@@ -34,7 +26,12 @@ export function BrewList() {
   return (
     <div className="max-w-5xl">
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <h1 className="text-2xl font-semibold tracking-tight">Brews</h1>
+        <div>
+          <h1 className="font-serif text-3xl font-medium tracking-tight">Your batches</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Everything fermenting, aging, or waiting to begin.
+          </p>
+        </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-56">
             <SelectValue placeholder="Filter by status" />
@@ -52,13 +49,13 @@ export function BrewList() {
 
       <RemindersPanel />
 
-      {isLoading && <p className="text-muted-foreground">Loading brews…</p>}
+      {isLoading && <p className="text-muted-foreground">Loading your batches…</p>}
 
       {!isLoading && filtered?.length === 0 && (
         <p className="text-muted-foreground">
-          No brews yet.{' '}
+          Nothing here yet.{' '}
           <Link to="/brews/new" className="underline">
-            Start your first one
+            Start your first batch
           </Link>
           .
         </p>
@@ -71,35 +68,52 @@ export function BrewList() {
             brew.batch_size,
             brew.batch_size_unit,
           )
+          const progress = fermentationProgress(brew.status)
+          const discarded = isDiscarded(brew.status)
+
           return (
             <Link key={brew.id} to={`/brews/${brew.id}`}>
-              <Card className="h-full hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base">{brew.name}</CardTitle>
-                    <Badge
-                      variant="secondary"
-                      className={STATUS_VARIANT[brew.status] ?? ''}
-                    >
-                      {brew.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground space-y-1">
-                  <p>{brew.style || brew.brew_type}</p>
-                  <p>Started {brew.start_date}</p>
-                  <div className="flex gap-4 pt-1">
-                    {brew.calculated_abv != null && (
-                      <span>{brew.calculated_abv.toFixed(1)}% ABV</span>
-                    )}
-                    {brew.batch_size != null && (
-                      <span>
-                        {brew.batch_size} {brew.batch_size_unit}
-                      </span>
-                    )}
-                    {perBottle != null && <span>${perBottle.toFixed(2)}/bottle</span>}
-                  </div>
-                </CardContent>
+              <Card className="h-full hover:shadow-md transition-shadow overflow-hidden py-0 flex-row gap-0">
+                <div
+                  className="w-1.5 shrink-0 relative"
+                  style={{ background: 'var(--ferment-empty)' }}
+                  aria-hidden="true"
+                >
+                  <div
+                    className={cnFill(discarded)}
+                    style={{ height: `${discarded ? 100 : progress}%` }}
+                  />
+                </div>
+                <div className="flex-1 min-w-0 py-6">
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <CardTitle className="font-serif text-base font-medium min-w-0">
+                        {brew.name}
+                      </CardTitle>
+                      <Badge
+                        variant="secondary"
+                        className={cn('shrink-0', STATUS_BADGE_CLASS[brew.status] ?? '')}
+                      >
+                        {brew.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground space-y-1">
+                    <p>{brew.style || brew.brew_type}</p>
+                    <p className="font-mono text-xs">Started {brew.start_date}</p>
+                    <div className="flex gap-4 pt-1 font-mono text-xs">
+                      {brew.calculated_abv != null && (
+                        <span>{brew.calculated_abv.toFixed(1)}% ABV</span>
+                      )}
+                      {brew.batch_size != null && (
+                        <span>
+                          {brew.batch_size} {brew.batch_size_unit}
+                        </span>
+                      )}
+                      {perBottle != null && <span>${perBottle.toFixed(2)}/bottle</span>}
+                    </div>
+                  </CardContent>
+                </div>
               </Card>
             </Link>
           )
@@ -107,4 +121,9 @@ export function BrewList() {
       </div>
     </div>
   )
+}
+
+function cnFill(discarded: boolean): string {
+  const base = 'absolute bottom-0 left-0 w-full transition-[height]'
+  return discarded ? `${base} bg-muted-foreground/40` : `${base} bg-primary`
 }

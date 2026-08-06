@@ -4,9 +4,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, func, select
 
 from ..database import get_session
-from ..models import Brew, GravityReading, Ingredient
-from ..schemas import BrewCreate, BrewUpdate, GravityReadingCreate, IngredientCreate
+from ..models import Brew, GravityReading, Ingredient, NutrientAddition
+from ..schemas import (
+    BrewCreate,
+    BrewUpdate,
+    GravityReadingCreate,
+    IngredientCreate,
+    IngredientUpdate,
+)
 from ..utils import calculate_abv, now_iso
+
+
+def compute_total_cost(amount: Optional[float], unit_cost: Optional[float]) -> Optional[float]:
+    if amount is None or unit_cost is None:
+        return None
+    return amount * unit_cost
 
 router = APIRouter(prefix="/api", tags=["brews"])
 
@@ -80,6 +92,11 @@ def update_brew(
 @router.delete("/brews/{brew_id}", status_code=204)
 def delete_brew(brew_id: int, session: Session = Depends(get_session)) -> None:
     brew = get_brew_or_404(brew_id, session)
+    # Ingredient/GravityReading cascade at the DB level; NutrientAddition doesn't yet.
+    for addition in session.exec(
+        select(NutrientAddition).where(NutrientAddition.brew_id == brew_id)
+    ):
+        session.delete(addition)
     session.delete(brew)
     session.commit()
 
@@ -96,7 +113,24 @@ def add_ingredient(
     brew_id: int, payload: IngredientCreate, session: Session = Depends(get_session)
 ) -> Ingredient:
     get_brew_or_404(brew_id, session)
-    ingredient = Ingredient(brew_id=brew_id, **payload.model_dump())
+    total_cost = compute_total_cost(payload.amount, payload.unit_cost)
+    ingredient = Ingredient(brew_id=brew_id, total_cost=total_cost, **payload.model_dump())
+    session.add(ingredient)
+    session.commit()
+    session.refresh(ingredient)
+    return ingredient
+
+
+@router.put("/ingredients/{ingredient_id}", response_model=Ingredient)
+def update_ingredient(
+    ingredient_id: int, payload: IngredientUpdate, session: Session = Depends(get_session)
+) -> Ingredient:
+    ingredient = session.get(Ingredient, ingredient_id)
+    if ingredient is None:
+        raise HTTPException(status_code=404, detail="Ingredient not found")
+    for key, value in payload.model_dump().items():
+        setattr(ingredient, key, value)
+    ingredient.total_cost = compute_total_cost(ingredient.amount, ingredient.unit_cost)
     session.add(ingredient)
     session.commit()
     session.refresh(ingredient)

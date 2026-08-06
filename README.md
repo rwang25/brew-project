@@ -55,6 +55,16 @@ Visit `http://<server-ip>:8000` from any device on your network.
 
 The database is created automatically at the repo root (`brews.db`) the first time the backend starts.
 
+## Run with Docker
+
+The fastest way to get a persistent server running — `docker compose` handles the build, and `restart: unless-stopped` means it survives reboots and doesn't need a terminal session kept open:
+
+```bash
+docker compose up -d --build
+```
+
+Visit `http://<server-ip>:8000`. `brews.db` is bind-mounted from the repo root into the container, so your data lives outside the container and isn't lost on rebuild. To stop it: `docker compose down`. To see logs: `docker compose logs -f`.
+
 ## Backup
 
 Copy `brews.db` somewhere safe. It contains all saved brew, ingredient, and gravity data.

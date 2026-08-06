@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom'
-import { useBrew } from '@/api/hooks'
+import { useBrew, useIngredients } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { IngredientsTab } from '@/pages/brew-detail/IngredientsTab'
@@ -8,49 +8,67 @@ import { NutrientScheduleTab } from '@/pages/brew-detail/NutrientScheduleTab'
 import { EditBrewTab } from '@/pages/brew-detail/EditBrewTab'
 import { Timeline } from '@/pages/brew-detail/Timeline'
 import { SaveAsRecipeDialog } from '@/pages/brew-detail/SaveAsRecipeDialog'
+import { STATUS_BADGE_CLASS } from '@/lib/status'
+import { costPerBottle } from '@/lib/units'
 
 export function BrewDetail() {
   const { id } = useParams()
   const brewId = Number(id)
   const { data: brew, isLoading } = useBrew(brewId)
+  const { data: ingredients } = useIngredients(brewId)
 
   if (isLoading) return <p className="text-muted-foreground">Loading…</p>
   if (!brew) return <p className="text-muted-foreground">Brew not found.</p>
+
+  const totalCost = ingredients?.reduce((sum, ing) => sum + (ing.total_cost ?? 0), 0) ?? 0
+  const hasCost = ingredients?.some((ing) => ing.total_cost != null)
+  const perBottle = costPerBottle(hasCost ? totalCost : null, brew.batch_size, brew.batch_size_unit)
 
   return (
     <div className="max-w-4xl">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{brew.name}</h1>
+          <h1 className="font-serif text-3xl font-medium tracking-tight">{brew.name}</h1>
           <p className="text-muted-foreground">{brew.style || brew.brew_type}</p>
         </div>
         <div className="flex items-center gap-2">
           <SaveAsRecipeDialog brewId={brew.id} brewName={brew.name} />
-          <Badge variant="secondary">{brew.status}</Badge>
+          <Badge variant="secondary" className={STATUS_BADGE_CLASS[brew.status] ?? ''}>
+            {brew.status}
+          </Badge>
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 text-sm">
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 text-sm font-mono">
         <div>
-          <dt className="text-muted-foreground">Started</dt>
+          <dt className="text-muted-foreground font-sans">Started</dt>
           <dd>{brew.start_date}</dd>
         </div>
         <div>
-          <dt className="text-muted-foreground">Batch size</dt>
+          <dt className="text-muted-foreground font-sans">Batch size</dt>
           <dd>
             {brew.batch_size != null ? `${brew.batch_size} ${brew.batch_size_unit}` : '—'}
           </dd>
         </div>
         <div>
-          <dt className="text-muted-foreground">OG / FG</dt>
+          <dt className="text-muted-foreground font-sans">OG / FG</dt>
           <dd>
             {brew.original_gravity ?? '—'} / {brew.final_gravity ?? '—'}
           </dd>
         </div>
         <div>
-          <dt className="text-muted-foreground">ABV</dt>
+          <dt className="text-muted-foreground font-sans">ABV</dt>
           <dd>{brew.calculated_abv != null ? `${brew.calculated_abv.toFixed(1)}%` : '—'}</dd>
         </div>
+        {hasCost && (
+          <div>
+            <dt className="text-muted-foreground font-sans">Est. cost</dt>
+            <dd>
+              ${totalCost.toFixed(2)}
+              {perBottle != null && ` (${perBottle.toFixed(2)}/bottle)`}
+            </dd>
+          </div>
+        )}
       </dl>
 
       <Timeline brew={brew} />
