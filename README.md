@@ -67,4 +67,15 @@ Visit `http://<server-ip>:8000`. `brews.db` is bind-mounted from the repo root i
 
 ## Backup
 
-Copy `brews.db` somewhere safe. It contains all saved brew, ingredient, and gravity data.
+`brews.db` is **not tracked in git** — it's live application data that changes on every use, and a git operation (checkout, reset, stash) run against a tracked copy of it will silently revert real data to whatever was last committed. It's protected instead by:
+
+- The Docker volume mount (`docker-compose.yml`), so the file survives container rebuilds.
+- `scripts/backup-db.sh` — copies `brews.db` into `backups/` (also gitignored) with a timestamp, and prunes backups older than 30 days:
+
+  ```bash
+  ./scripts/backup-db.sh
+  ```
+
+  Run it before anything risky (upgrades, migrations, manual DB edits), and consider scheduling it (cron or `launchd` on macOS) for regular automatic backups.
+
+For an off-machine copy, periodically copy a file out of `backups/` somewhere else — another disk, cloud storage, wherever you'd keep something you don't want to lose.

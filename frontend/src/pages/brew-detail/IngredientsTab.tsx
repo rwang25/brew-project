@@ -143,7 +143,7 @@ function EditableIngredientRow({
       <TableCell>
         <Input value={notes} onChange={(e) => setNotes(e.target.value)} className="h-8" />
       </TableCell>
-      <TableCell>
+      <TableCell className="sticky right-0 bg-background border-l">
         <div className="flex">
           <Button variant="ghost" size="icon" onClick={handleSave} disabled={isSaving}>
             <Check className="size-4 text-primary" />
@@ -234,7 +234,7 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
               <TableHead>Added</TableHead>
               <TableHead>Cost</TableHead>
               <TableHead>Notes</TableHead>
-              <TableHead className="w-20" />
+              <TableHead className="w-20 sticky right-0 bg-background border-l" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -260,7 +260,7 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
                     {ing.total_cost != null ? `$${ing.total_cost.toFixed(2)}` : '—'}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{ing.notes || '—'}</TableCell>
-                  <TableCell>
+                  <TableCell className="sticky right-0 bg-background border-l">
                     <div className="flex">
                       <Button
                         variant="ghost"

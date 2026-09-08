@@ -8,3 +8,11 @@ frontend/dist/
 frontend/node_modules/
 
 .DS_Store
+
+# Live application data — never track this. It changes on every use, and a
+# stray git checkout/reset/stash against it silently reverts real data (see
+# the "Backups" section in README.md for how it's actually protected).
+brews.db
+brews.db-wal
+brews.db-shm
+backups/
