@@ -28,6 +28,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Check, Pencil, Trash2, X } from 'lucide-react'
+import { convertUnitCost } from '@/lib/units'
 
 interface EditState {
   name: string
@@ -356,12 +357,34 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
   const totalCost = ingredients?.reduce((sum, ing) => sum + (ing.total_cost ?? 0), 0) ?? 0
   const hasAnyCost = ingredients?.some((ing) => ing.total_cost != null)
 
-  const applyPriceLookup = (name: string) => {
+  // Re-derives cost-per-unit from the pricebook whenever the ingredient name
+  // or the unit changes (never once the user has typed a cost themselves).
+  // If this ingredient is priced in a different but convertible unit (e.g.
+  // priced per lb, this addition logged in g), the cost converts along with
+  // it instead of requiring an exact unit match.
+  const deriveCostFromPricebook = (name: string, currentUnit: string) => {
     if (unitCostTouched) return
-    const match = prices?.find((p) => p.ingredient_name.toLowerCase() === name.toLowerCase())
-    if (match) {
-      setUnitCost(String(match.unit_cost))
-      if (!unit) setUnit(match.unit)
+    const candidates = prices?.filter((p) => p.ingredient_name.toLowerCase() === name.toLowerCase())
+    if (!candidates || candidates.length === 0) return
+
+    if (!currentUnit) {
+      setUnitCost(String(candidates[0].unit_cost))
+      setUnit(candidates[0].unit)
+      return
+    }
+
+    const exact = candidates.find((p) => p.unit.toLowerCase() === currentUnit.toLowerCase())
+    if (exact) {
+      setUnitCost(String(exact.unit_cost))
+      return
+    }
+
+    for (const candidate of candidates) {
+      const converted = convertUnitCost(candidate.unit_cost, candidate.unit, currentUnit)
+      if (converted != null) {
+        setUnitCost(converted.toPrecision(4).replace(/\.?0+$/, ''))
+        return
+      }
     }
   }
 
@@ -371,7 +394,6 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
     setIngredientName(match.ingredient_name)
     setUnit(match.unit)
     setUnitCost(String(match.unit_cost))
-    setUnitCostTouched(true)
   }
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -515,7 +537,7 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
             id="new-ingredient-name"
             value={ingredientName}
             onChange={(e) => setIngredientName(e.target.value)}
-            onBlur={(e) => applyPriceLookup(e.target.value)}
+            onBlur={(e) => deriveCostFromPricebook(e.target.value, unit)}
           />
           {prices && prices.length > 0 && (
             <Select onValueChange={handleQuickFill}>
@@ -554,6 +576,7 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
             placeholder="lb, g, oz"
             value={unit}
             onChange={(e) => setUnit(e.target.value)}
+            onBlur={(e) => deriveCostFromPricebook(ingredientName, e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
