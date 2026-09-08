@@ -163,7 +163,7 @@ export function NutrientScheduleTab({ brew }: { brew: Brew }) {
           <label className="text-sm font-medium">Amount</label>
           <Input
             type="number"
-            step="0.1"
+            step="0.01"
             min="0"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}

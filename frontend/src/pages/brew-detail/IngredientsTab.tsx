@@ -78,7 +78,7 @@ function EditableIngredientRow({
       <TableCell>
         <Input
           type="number"
-          step="0.1"
+          step="0.01"
           min="0"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
@@ -300,31 +300,46 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
 
       <form onSubmit={handleAdd} className="grid gap-3 sm:grid-cols-6 items-end">
         <div className="sm:col-span-2 space-y-1.5">
-          <label className="text-sm font-medium">Ingredient</label>
+          <label htmlFor="new-ingredient-name" className="text-sm font-medium">
+            Ingredient
+          </label>
           <Input
+            id="new-ingredient-name"
             value={ingredientName}
             onChange={(e) => setIngredientName(e.target.value)}
             onBlur={(e) => applyPriceLookup(e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Amount</label>
+          <label htmlFor="new-ingredient-amount" className="text-sm font-medium">
+            Amount
+          </label>
           <Input
+            id="new-ingredient-amount"
             type="number"
-            step="0.1"
+            step="0.01"
             min="0"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Unit</label>
-          <Input placeholder="lb, g, oz" value={unit} onChange={(e) => setUnit(e.target.value)} />
+          <label htmlFor="new-ingredient-unit" className="text-sm font-medium">
+            Unit
+          </label>
+          <Input
+            id="new-ingredient-unit"
+            placeholder="lb, g, oz"
+            value={unit}
+            onChange={(e) => setUnit(e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Category</label>
+          <label htmlFor="new-ingredient-category" className="text-sm font-medium">
+            Category
+          </label>
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger>
+            <SelectTrigger id="new-ingredient-category">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -337,9 +352,11 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Stage</label>
+          <label htmlFor="new-ingredient-stage" className="text-sm font-medium">
+            Stage
+          </label>
           <Select value={stage} onValueChange={setStage}>
-            <SelectTrigger>
+            <SelectTrigger id="new-ingredient-stage">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -352,16 +369,22 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Addition date</label>
+          <label htmlFor="new-ingredient-date" className="text-sm font-medium">
+            Addition date
+          </label>
           <Input
+            id="new-ingredient-date"
             type="date"
             value={additionDate}
             onChange={(e) => setAdditionDate(e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Cost per unit</label>
+          <label htmlFor="new-ingredient-cost" className="text-sm font-medium">
+            Cost per unit
+          </label>
           <Input
+            id="new-ingredient-cost"
             type="number"
             step="0.01"
             min="0"
@@ -373,8 +396,14 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
           />
         </div>
         <div className="sm:col-span-4 space-y-1.5">
-          <label className="text-sm font-medium">Notes</label>
-          <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <label htmlFor="new-ingredient-notes" className="text-sm font-medium">
+            Notes
+          </label>
+          <Input
+            id="new-ingredient-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </div>
         <Button type="submit" disabled={addIngredient.isPending}>
           Add ingredient

@@ -81,16 +81,32 @@ export function PriceBook() {
 
       <form onSubmit={handleAdd} className="grid gap-3 sm:grid-cols-4 items-end mt-6">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Ingredient</label>
-          <Input value={ingredientName} onChange={(e) => setIngredientName(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium">Unit</label>
-          <Input placeholder="lb, g, oz" value={unit} onChange={(e) => setUnit(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium">Cost per unit</label>
+          <label htmlFor="price-ingredient-name" className="text-sm font-medium">
+            Ingredient
+          </label>
           <Input
+            id="price-ingredient-name"
+            value={ingredientName}
+            onChange={(e) => setIngredientName(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="price-ingredient-unit" className="text-sm font-medium">
+            Unit
+          </label>
+          <Input
+            id="price-ingredient-unit"
+            placeholder="lb, g, oz"
+            value={unit}
+            onChange={(e) => setUnit(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="price-ingredient-cost" className="text-sm font-medium">
+            Cost per unit
+          </label>
+          <Input
+            id="price-ingredient-cost"
             type="number"
             step="0.01"
             min="0"
