@@ -365,6 +365,15 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
     }
   }
 
+  const handleQuickFill = (priceId: string) => {
+    const match = prices?.find((p) => String(p.id) === priceId)
+    if (!match) return
+    setIngredientName(match.ingredient_name)
+    setUnit(match.unit)
+    setUnitCost(String(match.unit_cost))
+    setUnitCostTouched(true)
+  }
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!ingredientName.trim()) {
@@ -508,6 +517,20 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
             onChange={(e) => setIngredientName(e.target.value)}
             onBlur={(e) => applyPriceLookup(e.target.value)}
           />
+          {prices && prices.length > 0 && (
+            <Select onValueChange={handleQuickFill}>
+              <SelectTrigger className="h-8 text-xs text-muted-foreground" aria-label="Quick-fill from priced ingredients">
+                <SelectValue placeholder="Or pick a priced ingredient…" />
+              </SelectTrigger>
+              <SelectContent>
+                {prices.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)}>
+                    {p.ingredient_name} ({p.unit})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         <div className="space-y-1.5">
           <label htmlFor="new-ingredient-amount" className="text-sm font-medium">
