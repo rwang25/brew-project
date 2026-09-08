@@ -37,16 +37,21 @@ export function Timeline({ brew }: { brew: Brew }) {
   return (
     <div className="mb-8">
       <h2 className="text-sm font-medium text-muted-foreground mb-3">Timeline</h2>
-      <ol className="space-y-3">
+      <ol className="relative space-y-4">
+        {events.length > 1 && (
+          <div className="absolute left-[3px] top-2 bottom-2 w-px bg-border" aria-hidden="true" />
+        )}
         {events.map((event, i) => (
-          <li key={i} className="flex items-start gap-3 text-sm">
+          <li key={i} className="relative flex items-start gap-3 text-sm">
             <div
               className={cn(
                 'mt-1.5 size-2 rounded-full shrink-0',
                 event.variant === 'milestone' ? 'bg-primary' : 'bg-muted-foreground/40',
               )}
             />
-            <span className="text-muted-foreground w-24 shrink-0">{event.date}</span>
+            <span className="text-muted-foreground font-mono text-xs mt-0.5 w-20 shrink-0">
+              {event.date}
+            </span>
             <span className="font-medium">{event.label}</span>
             {event.detail && <span className="text-muted-foreground">({event.detail})</span>}
           </li>

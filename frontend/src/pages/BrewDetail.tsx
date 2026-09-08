@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useBrew, useIngredients } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { IngredientsTab } from '@/pages/brew-detail/IngredientsTab'
 import { GravityTab } from '@/pages/brew-detail/GravityTab'
@@ -11,13 +12,26 @@ import { SaveAsRecipeDialog } from '@/pages/brew-detail/SaveAsRecipeDialog'
 import { STATUS_BADGE_CLASS } from '@/lib/status'
 import { costPerBottle } from '@/lib/units'
 
+function BrewDetailSkeleton() {
+  return (
+    <div className="max-w-4xl space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-4 w-40" />
+      </div>
+      <Skeleton className="h-24 w-full rounded-lg" />
+      <Skeleton className="h-40 w-full rounded-lg" />
+    </div>
+  )
+}
+
 export function BrewDetail() {
   const { id } = useParams()
   const brewId = Number(id)
   const { data: brew, isLoading } = useBrew(brewId)
   const { data: ingredients } = useIngredients(brewId)
 
-  if (isLoading) return <p className="text-muted-foreground">Loading…</p>
+  if (isLoading) return <BrewDetailSkeleton />
   if (!brew) return <p className="text-muted-foreground">Brew not found.</p>
 
   const totalCost = ingredients?.reduce((sum, ing) => sum + (ing.total_cost ?? 0), 0) ?? 0
@@ -39,30 +53,30 @@ export function BrewDetail() {
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 text-sm font-mono">
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5 mb-8 rounded-lg border bg-card p-5 text-sm font-mono">
         <div>
-          <dt className="text-muted-foreground font-sans">Started</dt>
+          <dt className="text-muted-foreground font-sans text-xs mb-1">Started</dt>
           <dd>{brew.start_date}</dd>
         </div>
         <div>
-          <dt className="text-muted-foreground font-sans">Batch size</dt>
+          <dt className="text-muted-foreground font-sans text-xs mb-1">Batch size</dt>
           <dd>
             {brew.batch_size != null ? `${brew.batch_size} ${brew.batch_size_unit}` : '—'}
           </dd>
         </div>
         <div>
-          <dt className="text-muted-foreground font-sans">OG / FG</dt>
+          <dt className="text-muted-foreground font-sans text-xs mb-1">OG / FG</dt>
           <dd>
             {brew.original_gravity ?? '—'} / {brew.final_gravity ?? '—'}
           </dd>
         </div>
         <div>
-          <dt className="text-muted-foreground font-sans">ABV</dt>
+          <dt className="text-muted-foreground font-sans text-xs mb-1">ABV</dt>
           <dd>{brew.calculated_abv != null ? `${brew.calculated_abv.toFixed(1)}%` : '—'}</dd>
         </div>
         {hasCost && (
           <div>
-            <dt className="text-muted-foreground font-sans">Est. cost</dt>
+            <dt className="text-muted-foreground font-sans text-xs mb-1">Est. cost</dt>
             <dd>
               ${totalCost.toFixed(2)}
               {perBottle != null && ` (${perBottle.toFixed(2)}/bottle)`}

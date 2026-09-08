@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { useBrews, useMeta } from '@/api/hooks'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -14,6 +16,28 @@ import { cn } from '@/lib/utils'
 import { costPerBottle } from '@/lib/units'
 import { STATUS_BADGE_CLASS, fermentationProgress, isDiscarded } from '@/lib/status'
 import { RemindersPanel } from '@/pages/RemindersPanel'
+import { MeadDropIcon } from '@/components/MeadDropIcon'
+
+function BrewCardSkeleton() {
+  return (
+    <Card className="overflow-hidden py-0 flex-row gap-0">
+      <div className="w-1.5 shrink-0 bg-muted" />
+      <div className="flex-1 min-w-0 py-6">
+        <CardHeader>
+          <div className="flex items-start justify-between gap-2">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-5 w-24 rounded-full" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-3 w-36" />
+        </CardContent>
+      </div>
+    </Card>
+  )
+}
 
 export function BrewList() {
   const { data: brews, isLoading } = useBrews()
@@ -25,7 +49,7 @@ export function BrewList() {
 
   return (
     <div className="max-w-5xl">
-      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
         <div>
           <h1 className="font-serif text-3xl font-medium tracking-tight">Your batches</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -49,16 +73,22 @@ export function BrewList() {
 
       <RemindersPanel />
 
-      {isLoading && <p className="text-muted-foreground">Loading your batches…</p>}
+      {isLoading && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <BrewCardSkeleton key={i} />
+          ))}
+        </div>
+      )}
 
       {!isLoading && filtered?.length === 0 && (
-        <p className="text-muted-foreground">
-          Nothing here yet.{' '}
-          <Link to="/brews/new" className="underline">
-            Start your first batch
-          </Link>
-          .
-        </p>
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-16 text-center">
+          <MeadDropIcon className="size-8 text-muted-foreground/50" />
+          <p className="text-muted-foreground">Nothing here yet.</p>
+          <Button asChild size="sm">
+            <Link to="/brews/new">Start your first batch</Link>
+          </Button>
+        </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -72,8 +102,8 @@ export function BrewList() {
           const discarded = isDiscarded(brew.status)
 
           return (
-            <Link key={brew.id} to={`/brews/${brew.id}`}>
-              <Card className="h-full hover:shadow-md transition-shadow overflow-hidden py-0 flex-row gap-0">
+            <Link key={brew.id} to={`/brews/${brew.id}`} className="group">
+              <Card className="h-full overflow-hidden py-0 flex-row gap-0 transition-[box-shadow,transform,border-color] duration-200 ease-out group-hover:shadow-warm-md group-hover:-translate-y-0.5 group-hover:border-ring/40">
                 <div
                   className="w-1.5 shrink-0 relative"
                   style={{ background: 'var(--ferment-empty)' }}
@@ -124,6 +154,6 @@ export function BrewList() {
 }
 
 function cnFill(discarded: boolean): string {
-  const base = 'absolute bottom-0 left-0 w-full transition-[height]'
+  const base = 'absolute bottom-0 left-0 w-full transition-[height] duration-300 ease-out'
   return discarded ? `${base} bg-muted-foreground/40` : `${base} bg-primary`
 }

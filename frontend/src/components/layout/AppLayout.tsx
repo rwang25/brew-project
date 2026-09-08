@@ -14,11 +14,11 @@ export function AppLayout() {
   return (
     <div className="min-h-svh flex flex-col md:flex-row">
       <aside className="border-b md:border-b-0 md:border-r bg-card md:w-56 md:min-h-svh shrink-0">
-        <div className="flex items-center gap-2 px-4 py-4">
+        <div className="flex items-center gap-2 px-4 py-4 md:border-b">
           <MeadDropIcon className="size-5 text-primary" />
           <span className="font-serif text-lg font-medium tracking-tight">Brew Tracker</span>
         </div>
-        <nav className="flex flex-wrap md:flex-col gap-1 px-2 pb-2 md:pb-4">
+        <nav className="flex flex-wrap md:flex-col gap-1 px-2 py-2 md:py-3">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
@@ -26,7 +26,7 @@ export function AppLayout() {
               end={end}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ease-out',
                   isActive
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
@@ -39,7 +39,7 @@ export function AppLayout() {
           ))}
         </nav>
       </aside>
-      <main className="flex-1 min-w-0 p-4 md:p-8">
+      <main className="flex-1 min-w-0 p-4 md:p-10">
         <Outlet />
       </main>
     </div>

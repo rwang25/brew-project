@@ -8,7 +8,7 @@
   daylight through a kitchen window, same amber, same oak, more parchment.
 */
 :root {
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 
   --background: #F4ECDA;
   --foreground: #241A12;
@@ -21,7 +21,7 @@
   --secondary: #E9DBBE;
   --secondary-foreground: #241A12;
   --muted: #ECE0C7;
-  --muted-foreground: #7C6C51;
+  --muted-foreground: #6B5A3F;
   --accent: #F0DFAE;
   --accent-foreground: #4A2E12;
   --destructive: #A6402A;
@@ -30,6 +30,7 @@
   --ring: #D98D2C;
 
   --ferment-empty: #E4D6B4;
+  --shadow-color: 36 28% 22%;
 }
 
 .dark {
@@ -53,6 +54,7 @@
   --ring: #E8A33D;
 
   --ferment-empty: #33281B;
+  --shadow-color: 30 40% 3%;
 }
 
 @theme inline {
@@ -95,5 +97,34 @@
   ::selection {
     background-color: var(--primary);
     color: var(--primary-foreground);
+  }
+}
+
+@layer utilities {
+  /* A warm-toned shadow tuned to the palette instead of neutral black — used
+     only for genuinely floating/liftable elements (hover states, popovers),
+     never stacked with a border on the same element. */
+  .shadow-warm-sm {
+    box-shadow: 0 1px 2px -1px hsl(var(--shadow-color) / 0.12);
+  }
+  .shadow-warm-md {
+    box-shadow:
+      0 4px 10px -2px hsl(var(--shadow-color) / 0.16),
+      0 2px 4px -2px hsl(var(--shadow-color) / 0.1);
+  }
+  .shadow-warm-lg {
+    box-shadow:
+      0 12px 24px -8px hsl(var(--shadow-color) / 0.22),
+      0 4px 8px -4px hsl(var(--shadow-color) / 0.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

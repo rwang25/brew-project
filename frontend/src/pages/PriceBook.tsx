@@ -64,8 +64,8 @@ export function PriceBook() {
             {prices.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="font-medium">{p.ingredient_name}</TableCell>
-                <TableCell>{p.unit}</TableCell>
-                <TableCell>${p.unit_cost.toFixed(2)}</TableCell>
+                <TableCell className="font-mono text-sm">{p.unit}</TableCell>
+                <TableCell className="font-mono text-sm">${p.unit_cost.toFixed(2)}</TableCell>
                 <TableCell>
                   <Button variant="ghost" size="icon" onClick={() => deletePrice.mutate(p.id)}>
                     <Trash2 className="size-4 text-destructive" />

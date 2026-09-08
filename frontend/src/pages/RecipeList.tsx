@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { costPerBottle } from '@/lib/units'
-import { Trash2 } from 'lucide-react'
+import { NotebookText, Trash2 } from 'lucide-react'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -62,14 +63,31 @@ export function RecipeList() {
 
   return (
     <div className="max-w-5xl">
-      <h1 className="font-serif text-3xl font-medium tracking-tight mb-6">Recipes</h1>
+      <h1 className="font-serif text-3xl font-medium tracking-tight mb-8">Recipes</h1>
 
-      {isLoading && <p className="text-muted-foreground">Loading recipes…</p>}
+      {isLoading && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-20" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {!isLoading && recipes?.length === 0 && (
-        <p className="text-muted-foreground">
-          No saved recipes yet. Save a brew as a recipe from its detail page to reuse it later.
-        </p>
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-16 text-center">
+          <NotebookText className="size-8 text-muted-foreground/50" />
+          <p className="text-muted-foreground">
+            No saved recipes yet. Save a batch as a recipe from its detail page to reuse it later.
+          </p>
+        </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

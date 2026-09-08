@@ -1,5 +1,5 @@
 export const STATUS_BADGE_CLASS: Record<string, string> = {
-  Planning: 'bg-[#DFCEA6]/40 text-[#5B4A32] dark:text-[#D8C7A4]',
+  Planning: 'bg-[#DFCEA6]/40 text-[#5B4A32] dark:text-[#F1E7D3]',
   'Primary fermentation': 'bg-[#E8A33D]/20 text-[#8A5A16] dark:text-[#F4C868]',
   'Secondary fermentation': 'bg-[#B36B2E]/20 text-[#7A4014] dark:text-[#E2A46E]',
   Stabilizing: 'bg-[#8A7A4A]/20 text-[#5F5230] dark:text-[#C9BB8E]',
