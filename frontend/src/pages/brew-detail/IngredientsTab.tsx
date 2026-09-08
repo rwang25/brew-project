@@ -155,7 +155,7 @@ function EditableIngredientRow({
       <TableCell>
         <Input
           type="number"
-          step="0.01"
+          step="any"
           min="0"
           value={state.unitCost}
           onChange={(e) => set('unitCost')(e.target.value)}
@@ -268,7 +268,7 @@ function IngredientCard({
           />
           <Input
             type="number"
-            step="0.01"
+            step="any"
             min="0"
             value={state.unitCost}
             onChange={(e) => set('unitCost')(e.target.value)}
@@ -382,7 +382,7 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
     for (const candidate of candidates) {
       const converted = convertUnitCost(candidate.unit_cost, candidate.unit, currentUnit)
       if (converted != null) {
-        setUnitCost(converted.toPrecision(4).replace(/\.?0+$/, ''))
+        setUnitCost(String(Number(converted.toFixed(6))))
         return
       }
     }
@@ -631,7 +631,7 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
           <Input
             id="new-ingredient-cost"
             type="number"
-            step="0.01"
+            step="any"
             min="0"
             value={unitCost}
             onChange={(e) => {

@@ -76,6 +76,14 @@ Visit `http://<server-ip>:8000`. `brews.db` is bind-mounted from the repo root i
   ./scripts/backup-db.sh
   ```
 
-  Run it before anything risky (upgrades, migrations, manual DB edits), and consider scheduling it (cron or `launchd` on macOS) for regular automatic backups.
+  Run it before anything risky (upgrades, migrations, manual DB edits).
+
+  On this machine it also runs automatically once a day at 3:00 AM via a macOS `launchd` agent (`scripts/com.brewtracker.backup.plist.example` is a copy of the installed job, for reference/reinstall). Check it with:
+
+  ```bash
+  launchctl print gui/501/com.brewtracker.backup
+  ```
+
+  Note: `launchd`-run scripts don't inherit Terminal's access to protected folders like Downloads — if the job's `.err.log` shows "Operation not permitted", grant Full Disk Access to `/bin/bash` in System Settings → Privacy & Security.
 
 For an off-machine copy, periodically copy a file out of `backups/` somewhere else — another disk, cloud storage, wherever you'd keep something you don't want to lose.

@@ -108,7 +108,7 @@ export function PriceBook() {
           <Input
             id="price-ingredient-cost"
             type="number"
-            step="0.01"
+            step="any"
             min="0"
             value={unitCost}
             onChange={(e) => setUnitCost(e.target.value)}
