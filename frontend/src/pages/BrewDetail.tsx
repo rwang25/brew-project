@@ -1,6 +1,5 @@
 import { useParams } from 'react-router-dom'
 import { useBrew, useIngredients } from '@/api/hooks'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { IngredientsTab } from '@/pages/brew-detail/IngredientsTab'
@@ -9,7 +8,7 @@ import { NutrientScheduleTab } from '@/pages/brew-detail/NutrientScheduleTab'
 import { EditBrewTab } from '@/pages/brew-detail/EditBrewTab'
 import { Timeline } from '@/pages/brew-detail/Timeline'
 import { SaveAsRecipeDialog } from '@/pages/brew-detail/SaveAsRecipeDialog'
-import { STATUS_BADGE_CLASS } from '@/lib/status'
+import { StatusTag } from '@/components/StatusTag'
 import { costPerBottle } from '@/lib/units'
 
 function BrewDetailSkeleton() {
@@ -40,43 +39,56 @@ export function BrewDetail() {
 
   return (
     <div className="max-w-4xl">
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
-        <div>
-          <h1 className="font-serif text-3xl font-medium tracking-tight">{brew.name}</h1>
-          <p className="text-muted-foreground">{brew.style || brew.brew_type}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <SaveAsRecipeDialog brewId={brew.id} brewName={brew.name} />
-          <Badge variant="secondary" className={STATUS_BADGE_CLASS[brew.status] ?? ''}>
-            {brew.status}
-          </Badge>
-        </div>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <span className="font-mono text-xs text-muted-foreground/70 tracking-wide">
+          No. {String(brew.id).padStart(3, '0')}
+        </span>
+        <StatusTag status={brew.status} />
       </div>
+      <div className="flex items-end justify-between gap-4 flex-wrap mt-1 mb-2">
+        <h1 className="font-serif text-3xl font-medium tracking-tight">{brew.name}</h1>
+        <SaveAsRecipeDialog brewId={brew.id} brewName={brew.name} />
+      </div>
+      <p className="text-muted-foreground text-sm uppercase tracking-wide">
+        {brew.style || brew.brew_type}
+      </p>
 
-      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5 mb-8 rounded-lg border bg-card p-5 text-sm font-mono">
+      <div className="h-px bg-border my-5" />
+
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5 mb-8 text-sm font-mono">
         <div>
-          <dt className="text-muted-foreground font-sans text-xs mb-1">Started</dt>
+          <dt className="text-muted-foreground font-sans text-xs uppercase tracking-wide mb-1">
+            Started
+          </dt>
           <dd>{brew.start_date}</dd>
         </div>
         <div>
-          <dt className="text-muted-foreground font-sans text-xs mb-1">Batch size</dt>
+          <dt className="text-muted-foreground font-sans text-xs uppercase tracking-wide mb-1">
+            Batch size
+          </dt>
           <dd>
             {brew.batch_size != null ? `${brew.batch_size} ${brew.batch_size_unit}` : '—'}
           </dd>
         </div>
         <div>
-          <dt className="text-muted-foreground font-sans text-xs mb-1">OG / FG</dt>
+          <dt className="text-muted-foreground font-sans text-xs uppercase tracking-wide mb-1">
+            OG / FG
+          </dt>
           <dd>
             {brew.original_gravity ?? '—'} / {brew.final_gravity ?? '—'}
           </dd>
         </div>
         <div>
-          <dt className="text-muted-foreground font-sans text-xs mb-1">ABV</dt>
+          <dt className="text-muted-foreground font-sans text-xs uppercase tracking-wide mb-1">
+            ABV
+          </dt>
           <dd>{brew.calculated_abv != null ? `${brew.calculated_abv.toFixed(1)}%` : '—'}</dd>
         </div>
         {hasCost && (
           <div>
-            <dt className="text-muted-foreground font-sans text-xs mb-1">Est. cost</dt>
+            <dt className="text-muted-foreground font-sans text-xs uppercase tracking-wide mb-1">
+              Est. cost
+            </dt>
             <dd>
               ${totalCost.toFixed(2)}
               {perBottle != null && ` (${perBottle.toFixed(2)}/bottle)`}

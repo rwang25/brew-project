@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { useCreateBrewFromRecipe, useDeleteRecipe, useRecipes } from '@/api/hooks'
 import type { Recipe } from '@/api/types'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -63,7 +63,9 @@ export function RecipeList() {
 
   return (
     <div className="max-w-5xl">
-      <h1 className="font-serif text-3xl font-medium tracking-tight mb-8">Recipes</h1>
+      <h1 className="font-serif text-3xl font-medium tracking-tight border-b pb-4 mb-8">
+        Recipes
+      </h1>
 
       {isLoading && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -98,12 +100,15 @@ export function RecipeList() {
             recipe.batch_size_unit,
           )
           return (
-            <Card key={recipe.id}>
-              <CardHeader>
-                <CardTitle className="font-serif text-lg font-medium">{recipe.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground space-y-3">
-                <p>{recipe.style || recipe.brew_type}</p>
+            <div key={recipe.id} className="rounded-sm border bg-card p-5">
+              <h3 className="font-serif text-lg font-medium">{recipe.name}</h3>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mt-0.5">
+                {recipe.style || recipe.brew_type}
+              </p>
+
+              <div className="h-px bg-border my-3" />
+
+              <div className="text-sm text-muted-foreground space-y-1.5">
                 <div className="flex gap-4 font-mono text-xs">
                   {recipe.batch_size != null && (
                     <span>
@@ -120,18 +125,14 @@ export function RecipeList() {
                     {perBottle != null && <span> · ${perBottle.toFixed(2)}/bottle</span>}
                   </div>
                 )}
-                <div className="flex items-center gap-2 pt-1">
-                  <StartBrewDialog recipe={recipe} />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteRecipe.mutate(recipe.id)}
-                  >
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="flex items-center gap-2 pt-4">
+                <StartBrewDialog recipe={recipe} />
+                <Button variant="ghost" size="icon" onClick={() => deleteRecipe.mutate(recipe.id)}>
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
           )
         })}
       </div>

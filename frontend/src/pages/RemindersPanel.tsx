@@ -15,7 +15,9 @@ export function RemindersPanel() {
   return (
     <Card className="mb-6 border-primary/40">
       <CardHeader>
-        <CardTitle className="font-serif text-lg font-medium">Needs attention</CardTitle>
+        <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Needs attention
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {nutrientItems.map((r, i) => (

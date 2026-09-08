@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useBrews, useMeta } from '@/api/hooks'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -12,30 +10,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
 import { costPerBottle } from '@/lib/units'
-import { STATUS_BADGE_CLASS, fermentationProgress, isDiscarded } from '@/lib/status'
+import { fermentationProgress, isDiscarded } from '@/lib/status'
 import { RemindersPanel } from '@/pages/RemindersPanel'
 import { MeadDropIcon } from '@/components/MeadDropIcon'
+import { StatusTag } from '@/components/StatusTag'
+import { GravityGauge } from '@/components/GravityGauge'
+
+function batchNumber(id: number): string {
+  return `No. ${String(id).padStart(3, '0')}`
+}
 
 function BrewCardSkeleton() {
   return (
-    <Card className="overflow-hidden py-0 flex-row gap-0">
-      <div className="w-1.5 shrink-0 bg-muted" />
-      <div className="flex-1 min-w-0 py-6">
-        <CardHeader>
-          <div className="flex items-start justify-between gap-2">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-5 w-24 rounded-full" />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-3 w-28" />
-          <Skeleton className="h-3 w-36" />
-        </CardContent>
+    <div className="rounded-sm border p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-3 w-12" />
+        <Skeleton className="h-5 w-24" />
       </div>
-    </Card>
+      <Skeleton className="h-6 w-36" />
+      <Skeleton className="h-px w-full" />
+      <Skeleton className="h-3 w-28" />
+    </div>
   )
 }
 
@@ -49,7 +45,7 @@ export function BrewList() {
 
   return (
     <div className="max-w-5xl">
-      <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+      <div className="flex items-end justify-between mb-8 gap-4 flex-wrap border-b pb-4">
         <div>
           <h1 className="font-serif text-3xl font-medium tracking-tight">Your batches</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -82,7 +78,7 @@ export function BrewList() {
       )}
 
       {!isLoading && filtered?.length === 0 && (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-16 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-sm border border-dashed py-16 text-center">
           <MeadDropIcon className="size-8 text-muted-foreground/50" />
           <p className="text-muted-foreground">Nothing here yet.</p>
           <Button asChild size="sm">
@@ -101,59 +97,40 @@ export function BrewList() {
           const progress = fermentationProgress(brew.status)
           const discarded = isDiscarded(brew.status)
 
+          const specParts = [
+            brew.batch_size != null ? `${brew.batch_size} ${brew.batch_size_unit}` : null,
+            brew.calculated_abv != null ? `${brew.calculated_abv.toFixed(1)}% ABV` : null,
+            perBottle != null ? `$${perBottle.toFixed(2)}/btl` : null,
+          ].filter(Boolean)
+
           return (
             <Link key={brew.id} to={`/brews/${brew.id}`} className="group">
-              <Card className="h-full overflow-hidden py-0 flex-row gap-0 transition-[box-shadow,transform,border-color] duration-200 ease-out group-hover:shadow-warm-md group-hover:-translate-y-0.5 group-hover:border-ring/40">
-                <div
-                  className="w-1.5 shrink-0 relative"
-                  style={{ background: 'var(--ferment-empty)' }}
-                  aria-hidden="true"
-                >
-                  <div
-                    className={cnFill(discarded)}
-                    style={{ height: `${discarded ? 100 : progress}%` }}
-                  />
+              <div className="h-full rounded-sm border bg-card p-5 transition-[box-shadow,transform,border-color] duration-200 ease-out group-hover:shadow-warm-md group-hover:-translate-y-0.5 group-hover:border-ring/40">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-mono text-[11px] text-muted-foreground/70 tracking-wide pt-1">
+                    {batchNumber(brew.id)}
+                  </span>
+                  <StatusTag status={brew.status} />
                 </div>
-                <div className="flex-1 min-w-0 py-6">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <CardTitle className="font-serif text-base font-medium min-w-0">
-                        {brew.name}
-                      </CardTitle>
-                      <Badge
-                        variant="secondary"
-                        className={cn('shrink-0', STATUS_BADGE_CLASS[brew.status] ?? '')}
-                      >
-                        {brew.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground space-y-1">
-                    <p>{brew.style || brew.brew_type}</p>
-                    <p className="font-mono text-xs">Started {brew.start_date}</p>
-                    <div className="flex gap-4 pt-1 font-mono text-xs">
-                      {brew.calculated_abv != null && (
-                        <span>{brew.calculated_abv.toFixed(1)}% ABV</span>
-                      )}
-                      {brew.batch_size != null && (
-                        <span>
-                          {brew.batch_size} {brew.batch_size_unit}
-                        </span>
-                      )}
-                      {perBottle != null && <span>${perBottle.toFixed(2)}/bottle</span>}
-                    </div>
-                  </CardContent>
+
+                <h3 className="font-serif text-lg font-medium mt-2 leading-snug">{brew.name}</h3>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground mt-0.5">
+                  {brew.style || brew.brew_type}
+                </p>
+
+                <div className="h-px bg-border my-3" />
+
+                <div className="flex items-center justify-between gap-3">
+                  <GravityGauge progress={discarded ? 100 : progress} muted={discarded} />
+                  <span className="font-mono text-[11px] text-muted-foreground text-right">
+                    {specParts.join(' · ') || '—'}
+                  </span>
                 </div>
-              </Card>
+              </div>
             </Link>
           )
         })}
       </div>
     </div>
   )
-}
-
-function cnFill(discarded: boolean): string {
-  const base = 'absolute bottom-0 left-0 w-full transition-[height] duration-300 ease-out'
-  return discarded ? `${base} bg-muted-foreground/40` : `${base} bg-primary`
 }
