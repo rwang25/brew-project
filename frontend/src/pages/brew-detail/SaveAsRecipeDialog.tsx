@@ -12,9 +12,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { BookmarkPlus } from 'lucide-react'
 
-export function SaveAsRecipeDialog({ brewId, brewName }: { brewId: number; brewName: string }) {
+export function SaveAsRecipeDialog({
+  brewId,
+  brewName,
+  triggerClassName,
+}: {
+  brewId: number
+  brewName: string
+  triggerClassName?: string
+}) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(brewName)
   const saveAsRecipe = useSaveAsRecipe(brewId)
@@ -32,10 +39,9 @@ export function SaveAsRecipeDialog({ brewId, brewName }: { brewId: number; brewN
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <BookmarkPlus className="size-4" />
+        <button type="button" className={triggerClassName}>
           Save as recipe
-        </Button>
+        </button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

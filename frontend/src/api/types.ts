@@ -27,6 +27,10 @@ export interface Brew {
 
 export interface BrewSummary extends Brew {
   total_ingredient_cost: number | null
+  ingredient_names: string[]
+  last_reading_date: string | null
+  latest_gravity: number | null
+  reading_count: number
 }
 
 export interface BrewCreateInput {
@@ -44,6 +48,8 @@ export interface BrewCreateInput {
   temperature_unit?: string | null
   vessel?: string | null
   process_notes?: string | null
+  expected_ready_date?: string | null
+  recipe_id?: number | null
 }
 
 export type BrewUpdateInput = Omit<
@@ -135,6 +141,7 @@ export interface Recipe {
 
 export interface RecipeSummary extends Recipe {
   estimated_cost: number | null
+  ingredient_names: string[]
 }
 
 export interface RecipeIngredient {
@@ -184,6 +191,23 @@ export interface IngredientPrice {
   unit: string
   unit_cost: number
   updated_at: string
+  container: string | null
+  color: string | null
+}
+
+export interface IngredientPriceUpsertInput {
+  ingredient_name: string
+  unit: string
+  unit_cost: number
+  container?: string | null
+  color?: string | null
+}
+
+export interface IngredientUsage {
+  ingredient_name: string
+  batch_count: number
+  recipe_count: number
+  total_cost: number | null
 }
 
 export interface Meta {

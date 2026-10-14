@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { Home } from '@/pages/Home'
 import { BrewList } from '@/pages/BrewList'
 import { BrewDetail } from '@/pages/BrewDetail'
 import { BrewCreate } from '@/pages/BrewCreate'
@@ -10,7 +11,8 @@ function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route path="/" element={<BrewList />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/brews" element={<BrewList />} />
         <Route path="/brews/new" element={<BrewCreate />} />
         <Route path="/brews/:id" element={<BrewDetail />} />
         <Route path="/recipes" element={<RecipeList />} />

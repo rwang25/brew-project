@@ -110,6 +110,10 @@ class IngredientPrice(SQLModel, table=True):
     unit: str
     unit_cost: float
     updated_at: str
+    # Both null = let the frontend guess from the name. Set only when the
+    # user overrides the pantry container or the colour it gives a batch.
+    container: Optional[str] = None
+    color: Optional[str] = None
 
 
 class Recipe(SQLModel, table=True):

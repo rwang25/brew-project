@@ -18,6 +18,8 @@ class BrewCreate(SQLModel):
     temperature_unit: Optional[str] = "°F"
     vessel: Optional[str] = None
     process_notes: Optional[str] = None
+    expected_ready_date: Optional[str] = None
+    recipe_id: Optional[int] = None
 
 
 class BrewUpdate(SQLModel):
@@ -89,6 +91,9 @@ class IngredientPriceUpsert(SQLModel):
     ingredient_name: str
     unit: str
     unit_cost: float
+    # Optional overrides; omit them to leave an existing entry's overrides alone.
+    container: Optional[str] = None
+    color: Optional[str] = None
 
 
 class SaveAsRecipeInput(SQLModel):

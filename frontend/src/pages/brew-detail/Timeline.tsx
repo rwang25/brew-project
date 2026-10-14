@@ -1,62 +1,112 @@
-import { useIngredients } from '@/api/hooks'
+import type { ReactNode } from 'react'
+import { useGravityReadings, useIngredients } from '@/api/hooks'
 import type { Brew } from '@/api/types'
+import { dayMonth, daysBetween, startOfToday, todayIso } from '@/lib/dates'
+import { cardClass } from '@/lib/shelfStyles'
+import { IN_VESSEL } from '@/lib/status'
 import { cn } from '@/lib/utils'
 
 interface TimelineEvent {
-  date: string
-  label: string
+  date: string | null
+  title: string
   detail?: string
-  variant: 'milestone' | 'addition'
+  kind: 'done' | 'today' | 'pending'
+  action?: ReactNode
 }
 
-export function Timeline({ brew }: { brew: Brew }) {
+export function Timeline({ brew, setReadyAction }: { brew: Brew; setReadyAction: ReactNode }) {
   const { data: ingredients } = useIngredients(brew.id)
+  const { data: readings } = useGravityReadings(brew.id)
+  const today = todayIso()
+  const active = IN_VESSEL.includes(brew.status) || brew.status === 'Planning'
 
-  const events: TimelineEvent[] = []
-
-  events.push({ date: brew.start_date, label: 'Start', variant: 'milestone' })
-
+  const events: TimelineEvent[] = [
+    {
+      date: brew.start_date,
+      title: brew.yeast ? `Pitched ${brew.yeast}` : 'Started',
+      detail: brew.original_gravity != null ? `OG ${brew.original_gravity.toFixed(3)}` : undefined,
+      kind: 'done',
+    },
+  ]
   for (const ing of ingredients ?? []) {
     if (!ing.addition_date) continue
     events.push({
       date: ing.addition_date,
-      label: `${ing.stage ?? 'Addition'}: ${ing.ingredient_name}`,
-      detail: ing.amount != null ? `${ing.amount} ${ing.unit ?? ''}`.trim() : undefined,
-      variant: 'addition',
+      title: `Added ${ing.ingredient_name}`,
+      detail: [ing.stage, ing.amount != null ? `${ing.amount} ${ing.unit ?? ''}`.trim() : null]
+        .filter(Boolean)
+        .join(' · '),
+      kind: 'done',
     })
   }
+  // Only the latest reading here; the gravity card has the full history.
+  const latest = [...(readings ?? [])].sort((a, b) => b.reading_date.localeCompare(a.reading_date))[0]
+  if (latest && latest.reading_date !== brew.start_date) {
+    events.push({ date: latest.reading_date, title: `Latest gravity ${latest.specific_gravity.toFixed(3)}`, kind: 'done' })
+  }
+  if (brew.rack_date) events.push({ date: brew.rack_date, title: 'Racked to secondary', kind: 'done' })
+  if (brew.bottle_date) events.push({ date: brew.bottle_date, title: 'Bottled', kind: 'done' })
+  events.sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))
 
-  if (brew.rack_date) events.push({ date: brew.rack_date, label: 'Racked', variant: 'milestone' })
-  if (brew.bottle_date)
-    events.push({ date: brew.bottle_date, label: 'Bottled', variant: 'milestone' })
-
-  events.sort((a, b) => a.date.localeCompare(b.date))
-
-  if (events.length <= 1) return null
+  if (active) {
+    events.push({
+      date: today,
+      title: `Day ${Math.max(0, daysBetween(brew.start_date, startOfToday()))}`,
+      kind: 'today',
+    })
+    if (!brew.bottle_date) events.push({ date: null, title: 'Bottling', kind: 'pending' })
+  }
+  if (brew.expected_ready_date) {
+    events.push({
+      date: brew.expected_ready_date,
+      title: 'Ready to drink',
+      kind: brew.expected_ready_date <= today ? 'done' : 'pending',
+    })
+  } else if (active) {
+    events.push({ date: null, title: 'Ready to drink', kind: 'pending', action: setReadyAction })
+  }
 
   return (
-    <div className="mb-8">
-      <h2 className="text-sm font-medium text-muted-foreground mb-3">Timeline</h2>
-      <ol className="relative space-y-4">
-        {events.length > 1 && (
-          <div className="absolute left-[3px] top-2 bottom-2 w-px bg-border" aria-hidden="true" />
-        )}
-        {events.map((event, i) => (
-          <li key={i} className="relative flex items-start gap-3 text-sm">
-            <div
-              className={cn(
-                'mt-1.5 size-2 rounded-full shrink-0',
-                event.variant === 'milestone' ? 'bg-primary' : 'bg-muted-foreground/40',
-              )}
-            />
-            <span className="text-muted-foreground font-mono text-xs mt-0.5 w-20 shrink-0">
-              {event.date}
-            </span>
-            <span className="font-medium">{event.label}</span>
-            {event.detail && <span className="text-muted-foreground">({event.detail})</span>}
-          </li>
-        ))}
+    <section className={cardClass}>
+      <h2 className="mb-4 font-display text-xl font-bold tracking-[-0.01em]">Timeline</h2>
+      <ol>
+        {events.map((event, i) => {
+          const lastItem = i === events.length - 1
+          return (
+            <li key={`${event.title}-${i}`} className="flex gap-3.5">
+              <div className="flex flex-col items-center">
+                <span
+                  className={cn(
+                    'mt-[5px] shrink-0 rounded-full',
+                    event.kind === 'done' && 'size-3 bg-ink',
+                    event.kind === 'today' && 'mt-[3px] size-4 border-[3px] border-ink bg-honey',
+                    event.kind === 'pending' && 'size-3 border-2 border-[#CDBF9F]',
+                  )}
+                />
+                {!lastItem && (
+                  <span
+                    className={cn(
+                      'flex-1',
+                      event.kind === 'done' ? 'w-0.5 bg-[#E7DFCF]' : 'w-0 border-l-2 border-dashed border-[#E7DFCF]',
+                    )}
+                  />
+                )}
+              </div>
+              <div className={cn(!lastItem && 'pb-4')}>
+                <p className={cn('font-mono text-xs', event.kind === 'today' ? 'text-[#8A5300]' : 'text-[#6E6150]')}>
+                  {event.date ? dayMonth(event.date) : 'Not set'}
+                  {event.kind === 'today' && ' · today'}
+                </p>
+                <p className={cn('text-[15px] font-semibold', event.kind === 'pending' && 'text-[#4A3E2A]')}>
+                  {event.title}
+                </p>
+                {event.detail && <p className="text-[13px] text-[#6E6150]">{event.detail}</p>}
+                {event.action && <div className="mt-2">{event.action}</div>}
+              </div>
+            </li>
+          )
+        })}
       </ol>
-    </div>
+    </section>
   )
 }

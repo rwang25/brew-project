@@ -48,10 +48,40 @@ def list_brews(
     ).all()
     cost_by_brew = {brew_id: total for brew_id, total in cost_rows if total is not None}
 
-    return [
-        {**brew.model_dump(), "total_ingredient_cost": cost_by_brew.get(brew.id)}
-        for brew in brews
-    ]
+    # The home-page shelf derives each batch's colour from its ingredients and
+    # flags fermenting batches whose gravity hasn't been checked in a while.
+    names_by_brew: dict[int, List[str]] = {}
+    for brew_id, name in session.exec(
+        select(Ingredient.brew_id, Ingredient.ingredient_name).order_by(Ingredient.id)
+    ):
+        names_by_brew.setdefault(brew_id, []).append(name)
+
+    latest_reading_by_brew: dict[int, tuple[str, float]] = {}
+    reading_count_by_brew: dict[int, int] = {}
+    for brew_id, reading_date, gravity in session.exec(
+        select(
+            GravityReading.brew_id,
+            GravityReading.reading_date,
+            GravityReading.specific_gravity,
+        ).order_by(GravityReading.reading_date, GravityReading.id)
+    ):
+        latest_reading_by_brew[brew_id] = (reading_date, gravity)
+        reading_count_by_brew[brew_id] = reading_count_by_brew.get(brew_id, 0) + 1
+
+    summaries = []
+    for brew in brews:
+        latest = latest_reading_by_brew.get(brew.id)
+        summaries.append(
+            {
+                **brew.model_dump(),
+                "total_ingredient_cost": cost_by_brew.get(brew.id),
+                "ingredient_names": names_by_brew.get(brew.id, []),
+                "last_reading_date": latest[0] if latest else None,
+                "latest_gravity": latest[1] if latest else None,
+                "reading_count": reading_count_by_brew.get(brew.id, 0),
+            }
+        )
+    return summaries
 
 
 @router.post("/brews", response_model=Brew, status_code=201)

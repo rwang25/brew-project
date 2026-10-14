@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   useAddIngredient,
   useDeleteIngredient,
@@ -8,27 +10,22 @@ import {
   useMeta,
   useUpdateIngredient,
 } from '@/api/hooks'
-import type { Ingredient, IngredientUpdateInput, Meta } from '@/api/types'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import type { Brew, Ingredient, IngredientUpdateInput, Meta } from '@/api/types'
+import { ColourDot } from '@/components/shelf'
+import { Skeleton } from '@/components/ui/skeleton'
+import { fullDate } from '@/lib/dates'
+import { batchColour, pantryLook, priceFor } from '@/lib/pantry'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Check, Pencil, Trash2, X } from 'lucide-react'
-import { convertUnitCost } from '@/lib/units'
+  btnIcon,
+  btnInk,
+  btnQuiet,
+  cardClass,
+  fieldClass,
+  h2Class,
+  labelClass,
+} from '@/lib/shelfStyles'
+import { convertUnitCost, costPerBottle, estimateBottleCount } from '@/lib/units'
+import { cn } from '@/lib/utils'
 
 interface EditState {
   name: string
@@ -71,278 +68,110 @@ function toUpdateInput(state: EditState): IngredientUpdateInput | null {
   }
 }
 
-function EditableIngredientRow({
-  ingredient,
-  meta,
-  onSave,
-  onCancel,
-  isSaving,
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+  className,
 }: {
-  ingredient: Ingredient
-  meta: Meta | undefined
-  onSave: (input: IngredientUpdateInput) => void
-  onCancel: () => void
-  isSaving: boolean
+  label: string
+  value: string
+  options: string[] | undefined
+  onChange: (value: string) => void
+  className?: string
 }) {
-  const [state, setState] = useState<EditState>(() => toEditState(ingredient))
-  const set = <K extends keyof EditState>(key: K) => (value: EditState[K]) =>
-    setState((s) => ({ ...s, [key]: value }))
-
-  const handleSave = () => {
-    const input = toUpdateInput(state)
-    if (input) onSave(input)
-  }
-
   return (
-    <TableRow>
-      <TableCell>
-        <Input value={state.name} onChange={(e) => set('name')(e.target.value)} className="h-8" />
-      </TableCell>
-      <TableCell>
-        <Input
-          type="number"
-          step="0.01"
-          min="0"
-          value={state.amount}
-          onChange={(e) => set('amount')(e.target.value)}
-          className="h-8 w-20"
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          value={state.unit}
-          onChange={(e) => set('unit')(e.target.value)}
-          className="h-8 w-16"
-          placeholder="lb, g"
-        />
-      </TableCell>
-      <TableCell>
-        <Select value={state.category} onValueChange={set('category')}>
-          <SelectTrigger className="h-8">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {meta?.ingredient_categories.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
-      <TableCell>
-        <Select value={state.stage} onValueChange={set('stage')}>
-          <SelectTrigger className="h-8">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {meta?.ingredient_stages.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
-      <TableCell>
-        <Input
-          type="date"
-          value={state.additionDate}
-          onChange={(e) => set('additionDate')(e.target.value)}
-          className="h-8"
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          type="number"
-          step="any"
-          min="0"
-          value={state.unitCost}
-          onChange={(e) => set('unitCost')(e.target.value)}
-          className="h-8 w-20"
-          placeholder="cost/unit"
-        />
-      </TableCell>
-      <TableCell>
-        <Input value={state.notes} onChange={(e) => set('notes')(e.target.value)} className="h-8" />
-      </TableCell>
-      <TableCell className="sticky right-0 bg-background border-l">
-        <div className="flex">
-          <Button variant="ghost" size="icon" onClick={handleSave} disabled={isSaving}>
-            <Check className="size-4 text-accent-foreground" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onCancel} disabled={isSaving}>
-            <X className="size-4 text-muted-foreground" />
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
+    <label className={cn(labelClass, className)}>
+      {label}
+      <select value={value} onChange={(e) => onChange(e.target.value)} className={fieldClass}>
+        {!value && <option value="">—</option>}
+        {options?.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }
 
-function IngredientCard({
+function IngredientEditor({
   ingredient,
   meta,
-  onDelete,
+  onDone,
 }: {
   ingredient: Ingredient
   meta: Meta | undefined
-  onDelete: () => void
+  onDone: () => void
 }) {
-  const [editing, setEditing] = useState(false)
   const [state, setState] = useState<EditState>(() => toEditState(ingredient))
   const updateIngredient = useUpdateIngredient(ingredient.brew_id)
   const set = <K extends keyof EditState>(key: K) => (value: EditState[K]) =>
     setState((s) => ({ ...s, [key]: value }))
 
-  const handleSave = async () => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
     const input = toUpdateInput(state)
     if (!input) return
     await updateIngredient.mutateAsync({ id: ingredient.id, input })
-    setEditing(false)
-  }
-
-  const handleCancel = () => {
-    setState(toEditState(ingredient))
-    setEditing(false)
-  }
-
-  if (editing) {
-    return (
-      <div className="rounded-lg border p-4 space-y-3">
-        <Input
-          value={state.name}
-          onChange={(e) => set('name')(e.target.value)}
-          placeholder="Ingredient"
-          aria-label="Ingredient name"
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={state.amount}
-            onChange={(e) => set('amount')(e.target.value)}
-            placeholder="Amount"
-            aria-label="Amount"
-          />
-          <Input
-            value={state.unit}
-            onChange={(e) => set('unit')(e.target.value)}
-            placeholder="Unit"
-            aria-label="Unit"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Select value={state.category} onValueChange={set('category')}>
-            <SelectTrigger aria-label="Category">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {meta?.ingredient_categories.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={state.stage} onValueChange={set('stage')}>
-            <SelectTrigger aria-label="Stage">
-              <SelectValue placeholder="Stage" />
-            </SelectTrigger>
-            <SelectContent>
-              {meta?.ingredient_stages.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            type="date"
-            value={state.additionDate}
-            onChange={(e) => set('additionDate')(e.target.value)}
-            aria-label="Addition date"
-          />
-          <Input
-            type="number"
-            step="any"
-            min="0"
-            value={state.unitCost}
-            onChange={(e) => set('unitCost')(e.target.value)}
-            placeholder="Cost per unit"
-            aria-label="Cost per unit"
-          />
-        </div>
-        <Input
-          value={state.notes}
-          onChange={(e) => set('notes')(e.target.value)}
-          placeholder="Notes"
-          aria-label="Notes"
-        />
-        <div className="flex gap-2 pt-1">
-          <Button onClick={handleSave} disabled={updateIngredient.isPending} className="flex-1">
-            Save
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            disabled={updateIngredient.isPending}
-            className="flex-1"
-          >
-            Cancel
-          </Button>
-        </div>
-      </div>
-    )
+    onDone()
   }
 
   return (
-    <div className="rounded-lg border p-4">
-      <div className="flex items-start justify-between gap-2">
-        <span className="font-medium">{ingredient.ingredient_name}</span>
-        <div className="flex -mr-2 -mt-1 shrink-0">
-          <Button variant="ghost" size="icon" onClick={() => setEditing(true)}>
-            <Pencil className="size-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onDelete}>
-            <Trash2 className="size-4 text-destructive" />
-          </Button>
-        </div>
+    <form
+      onSubmit={handleSave}
+      aria-label={`Edit ${ingredient.ingredient_name}`}
+      className="my-2 flex flex-wrap items-end gap-3 rounded-[14px] border border-honey-line bg-[#FFF6DA] p-4"
+    >
+      <label className={cn(labelClass, 'flex-[2_1_220px]')}>
+        Ingredient
+        <input value={state.name} onChange={(e) => set('name')(e.target.value)} className={fieldClass} />
+      </label>
+      <label className={cn(labelClass, 'flex-[1_1_90px]')}>
+        Amount
+        <input type="number" step="0.01" min="0" value={state.amount} onChange={(e) => set('amount')(e.target.value)} className={cn(fieldClass, 'font-mono')} />
+      </label>
+      <label className={cn(labelClass, 'flex-[1_1_80px]')}>
+        Unit
+        <input value={state.unit} onChange={(e) => set('unit')(e.target.value)} className={fieldClass} />
+      </label>
+      <label className={cn(labelClass, 'flex-[1_1_110px]')}>
+        Cost per unit
+        <input type="number" step="any" min="0" value={state.unitCost} onChange={(e) => set('unitCost')(e.target.value)} className={cn(fieldClass, 'font-mono')} />
+      </label>
+      <SelectField label="Category" value={state.category} options={meta?.ingredient_categories} onChange={set('category')} className="flex-[1_1_140px]" />
+      <SelectField label="Stage" value={state.stage} options={meta?.ingredient_stages} onChange={set('stage')} className="flex-[1_1_120px]" />
+      <label className={cn(labelClass, 'flex-[1_1_150px]')}>
+        Added on
+        <input type="date" value={state.additionDate} onChange={(e) => set('additionDate')(e.target.value)} className={fieldClass} />
+      </label>
+      <label className={cn(labelClass, 'flex-[2_1_200px]')}>
+        Notes
+        <input value={state.notes} onChange={(e) => set('notes')(e.target.value)} className={fieldClass} />
+      </label>
+      <div className="flex gap-2">
+        <button type="submit" disabled={updateIngredient.isPending} className={cn(btnInk, 'min-h-11 rounded-[10px]')}>
+          Save
+        </button>
+        <button type="button" onClick={onDone} disabled={updateIngredient.isPending} className={btnQuiet}>
+          Cancel
+        </button>
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground font-mono">
-        {ingredient.amount != null && (
-          <span>
-            {ingredient.amount} {ingredient.unit}
-          </span>
-        )}
-        {ingredient.category && <span>{ingredient.category}</span>}
-        {ingredient.stage && <span>{ingredient.stage}</span>}
-        {ingredient.addition_date && <span>{ingredient.addition_date}</span>}
-        {ingredient.total_cost != null && (
-          <span className="text-foreground font-medium">
-            ${ingredient.total_cost.toFixed(2)}
-          </span>
-        )}
-      </div>
-      {ingredient.notes && (
-        <p className="text-sm text-muted-foreground mt-1.5">{ingredient.notes}</p>
-      )}
-    </div>
+    </form>
   )
 }
 
-export function IngredientsTab({ brewId }: { brewId: number }) {
+export function IngredientsTab({ brew }: { brew: Brew }) {
+  const brewId = brew.id
   const { data: ingredients } = useIngredients(brewId)
   const { data: meta } = useMeta()
   const { data: prices } = useIngredientPrices()
   const addIngredient = useAddIngredient(brewId)
-  const updateIngredient = useUpdateIngredient(brewId)
   const deleteIngredient = useDeleteIngredient(brewId)
 
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [adding, setAdding] = useState(false)
 
   const [ingredientName, setIngredientName] = useState('')
   const [amount, setAmount] = useState('')
@@ -354,10 +183,18 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
   const [unitCostTouched, setUnitCostTouched] = useState(false)
   const [notes, setNotes] = useState('')
 
-  const totalCost = ingredients?.reduce((sum, ing) => sum + (ing.total_cost ?? 0), 0) ?? 0
-  const hasAnyCost = ingredients?.some((ing) => ing.total_cost != null)
+  const list = ingredients ?? []
+  const totalCost = list.reduce((sum, ing) => sum + (ing.total_cost ?? 0), 0)
+  const hasAnyCost = list.some((ing) => ing.total_cost != null)
+  const colour = batchColour(
+    list.map((i) => i.ingredient_name),
+    prices,
+  )
+  const perBottle = costPerBottle(hasAnyCost ? totalCost : null, brew.batch_size, brew.batch_size_unit)
+  const bottles = estimateBottleCount(brew.batch_size, brew.batch_size_unit)
+  const showForm = adding || (ingredients !== undefined && list.length === 0)
 
-  // Re-derives cost-per-unit from the pricebook whenever the ingredient name
+  // Re-derives cost-per-unit from the price book whenever the ingredient name
   // or the unit changes (never once the user has typed a cost themselves).
   // If this ingredient is priced in a different but convertible unit (e.g.
   // priced per lb, this addition logged in g), the cost converts along with
@@ -419,241 +256,225 @@ export function IngredientsTab({ brewId }: { brewId: number }) {
     setUnitCost('')
     setUnitCostTouched(false)
     setNotes('')
-  }
-
-  const handleSaveEdit = async (input: IngredientUpdateInput) => {
-    if (editingId == null) return
-    await updateIngredient.mutateAsync({ id: editingId, input })
-    setEditingId(null)
+    setAdding(false)
   }
 
   return (
-    <div className="space-y-6">
-      {ingredients && ingredients.length > 0 ? (
-        <>
-          {/* Desktop / tablet: table */}
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ingredient</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Unit</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Stage</TableHead>
-                  <TableHead>Added</TableHead>
-                  <TableHead>Cost</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead className="w-20 sticky right-0 bg-background border-l" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ingredients.map((ing) =>
-                  editingId === ing.id ? (
-                    <EditableIngredientRow
-                      key={ing.id}
-                      ingredient={ing}
-                      meta={meta}
-                      onSave={handleSaveEdit}
-                      onCancel={() => setEditingId(null)}
-                      isSaving={updateIngredient.isPending}
-                    />
-                  ) : (
-                    <TableRow key={ing.id}>
-                      <TableCell className="font-medium">{ing.ingredient_name}</TableCell>
-                      <TableCell>{ing.amount ?? '—'}</TableCell>
-                      <TableCell>{ing.unit ?? '—'}</TableCell>
-                      <TableCell>{ing.category ?? '—'}</TableCell>
-                      <TableCell>{ing.stage ?? '—'}</TableCell>
-                      <TableCell>{ing.addition_date ?? '—'}</TableCell>
-                      <TableCell>
-                        {ing.total_cost != null ? `$${ing.total_cost.toFixed(2)}` : '—'}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{ing.notes || '—'}</TableCell>
-                      <TableCell className="sticky right-0 bg-background border-l">
-                        <div className="flex">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingId(ing.id)}
-                          >
-                            <Pencil className="size-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deleteIngredient.mutate(ing.id)}
-                          >
-                            <Trash2 className="size-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ),
-                )}
-              </TableBody>
-              {hasAnyCost && (
-                <TableFooter>
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-right font-medium">
-                      Total ingredient cost
-                    </TableCell>
-                    <TableCell className="font-medium">${totalCost.toFixed(2)}</TableCell>
-                    <TableCell colSpan={2} />
-                  </TableRow>
-                </TableFooter>
-              )}
-            </Table>
-          </div>
+    <section id="ingredients" className={cn(cardClass, 'scroll-mt-24')}>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <h2 className={h2Class}>Ingredients</h2>
+        {!showForm && (
+          <button type="button" onClick={() => setAdding(true)} className={btnQuiet}>
+            <Plus className="size-4" strokeWidth={2.2} />
+            Add ingredient
+          </button>
+        )}
+      </div>
 
-          {/* Mobile: stacked cards */}
-          <div className="md:hidden space-y-3">
-            {ingredients.map((ing) => (
-              <IngredientCard
+      {ingredients === undefined ? (
+        <Skeleton className="mt-3 h-24 w-full" />
+      ) : list.length > 0 ? (
+        <ul className="mt-3">
+          {list.map((ing) => {
+            if (editingId === ing.id) {
+              return (
+                <li key={ing.id}>
+                  <IngredientEditor ingredient={ing} meta={meta} onDone={() => setEditingId(null)} />
+                </li>
+              )
+            }
+            const look = pantryLook(ing.ingredient_name, priceFor(ing.ingredient_name, prices))
+            const decides = colour.decidedBy === ing.ingredient_name
+            const details = [
+              ing.category,
+              ing.stage,
+              ing.addition_date ? `added ${fullDate(ing.addition_date)}` : null,
+              ing.notes,
+            ].filter(Boolean)
+            return (
+              <li
                 key={ing.id}
-                ingredient={ing}
-                meta={meta}
-                onDelete={() => deleteIngredient.mutate(ing.id)}
-              />
-            ))}
-            {hasAnyCost && (
-              <div className="flex justify-between rounded-lg border border-dashed px-4 py-3 text-sm font-medium">
-                <span>Total ingredient cost</span>
-                <span>${totalCost.toFixed(2)}</span>
-              </div>
-            )}
-          </div>
-        </>
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-[#EFE8DA] py-3.5"
+              >
+                <ColourDot color={look.fill} />
+                <span className="min-w-0 flex-[1_1_220px]">
+                  <span className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
+                    {ing.ingredient_name}
+                    {decides && (
+                      <span className="rounded-full bg-honey-soft px-2 py-px text-[11px] font-bold text-[#6E4B00]">
+                        sets the colour
+                      </span>
+                    )}
+                    {look.darkens && (
+                      <span className="rounded-full bg-[#F1E2C8] px-2 py-px text-[11px] font-bold text-[#5E4520]">
+                        darkens a step
+                      </span>
+                    )}
+                  </span>
+                  {details.length > 0 && <span className="text-[13px] text-[#6E6150]">{details.join(' · ')}</span>}
+                </span>
+                <span className="font-mono text-sm">
+                  {ing.amount != null ? `${ing.amount} ${ing.unit ?? ''}`.trim() : '—'}
+                </span>
+                {ing.unit_cost != null && (
+                  <span className="font-mono text-[13px] text-[#6E6150]">
+                    × ${ing.unit_cost.toFixed(2)}
+                    {ing.unit ? `/${ing.unit}` : ''}
+                  </span>
+                )}
+                <span className="min-w-[72px] text-right font-mono text-[15px] font-semibold">
+                  {ing.total_cost != null ? `$${ing.total_cost.toFixed(2)}` : '—'}
+                </span>
+                <span className="flex">
+                  <button
+                    type="button"
+                    aria-label={`Edit ${ing.ingredient_name}`}
+                    onClick={() => setEditingId(ing.id)}
+                    className={btnIcon}
+                  >
+                    <Pencil className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Delete ${ing.ingredient_name}`}
+                    onClick={() => deleteIngredient.mutate(ing.id)}
+                    className={btnIcon}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </button>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
       ) : (
-        <p className="text-muted-foreground text-sm">No ingredients recorded.</p>
+        <p className="mt-3 text-sm text-[#6E6150]">No ingredients yet.</p>
       )}
 
-      <form onSubmit={handleAdd} className="grid grid-cols-2 gap-3 sm:grid-cols-6 items-end">
-        <div className="col-span-2 space-y-1.5">
-          <label htmlFor="new-ingredient-name" className="text-sm font-medium">
-            Ingredient
-          </label>
-          <Input
-            id="new-ingredient-name"
-            value={ingredientName}
-            onChange={(e) => setIngredientName(e.target.value)}
-            onBlur={(e) => deriveCostFromPricebook(e.target.value, unit)}
-          />
-          {prices && prices.length > 0 && (
-            <Select onValueChange={handleQuickFill}>
-              <SelectTrigger className="h-8 text-xs text-muted-foreground" aria-label="Quick-fill from priced ingredients">
-                <SelectValue placeholder="Or pick a priced ingredient…" />
-              </SelectTrigger>
-              <SelectContent>
-                {prices.map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>
-                    {p.ingredient_name} ({p.unit})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {list.length > 0 && (
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 pt-3.5">
+          <p className="text-[13px] text-[#6E6150]">
+            Unit costs come from your{' '}
+            <Link to="/prices" className="font-semibold text-[#8A5300] hover:underline">
+              price book
+            </Link>
+            {perBottle != null && bottles != null && ` · about $${perBottle.toFixed(2)} a bottle across ${bottles} bottles`}
+          </p>
+          {hasAnyCost && (
+            <p className="flex items-baseline gap-2.5" data-testid="ingredient-total">
+              <span className="text-sm font-semibold">Total ingredient cost</span>
+              <span className="font-mono text-lg font-bold">${totalCost.toFixed(2)}</span>
+            </p>
           )}
         </div>
-        <div className="space-y-1.5">
-          <label htmlFor="new-ingredient-amount" className="text-sm font-medium">
+      )}
+
+      {showForm && (
+        <form
+          onSubmit={handleAdd}
+          aria-label="Add ingredient"
+          className="mt-5 flex flex-wrap items-end gap-3 rounded-[14px] border border-honey-line bg-[#FFF6DA] p-4"
+        >
+          <div className="flex w-full flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm font-semibold">Add ingredient</p>
+            {prices && prices.length > 0 && (
+              <label className="flex items-center gap-2 text-[13px] text-[#4A3E2A]">
+                From the price book
+                <select
+                  value=""
+                  onChange={(e) => handleQuickFill(e.target.value)}
+                  className={cn(fieldClass, 'min-h-9 w-auto text-[13px]')}
+                >
+                  <option value="">Pick one…</option>
+                  {prices.map((p) => (
+                    <option key={p.id} value={String(p.id)}>
+                      {p.ingredient_name} ({p.unit})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
+          <label htmlFor="new-ingredient-name" className={cn(labelClass, 'flex-[2_1_220px]')}>
+            Ingredient
+            <input
+              id="new-ingredient-name"
+              value={ingredientName}
+              onChange={(e) => setIngredientName(e.target.value)}
+              onBlur={(e) => deriveCostFromPricebook(e.target.value, unit)}
+              className={fieldClass}
+            />
+          </label>
+          <label htmlFor="new-ingredient-amount" className={cn(labelClass, 'flex-[1_1_90px]')}>
             Amount
+            <input
+              id="new-ingredient-amount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className={cn(fieldClass, 'font-mono')}
+            />
           </label>
-          <Input
-            id="new-ingredient-amount"
-            type="number"
-            step="0.01"
-            min="0"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="new-ingredient-unit" className="text-sm font-medium">
+          <label htmlFor="new-ingredient-unit" className={cn(labelClass, 'flex-[1_1_80px]')}>
             Unit
+            <input
+              id="new-ingredient-unit"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              onBlur={(e) => deriveCostFromPricebook(ingredientName, e.target.value)}
+              className={fieldClass}
+            />
           </label>
-          <Input
-            id="new-ingredient-unit"
-            placeholder="lb, g, oz"
-            value={unit}
-            onChange={(e) => setUnit(e.target.value)}
-            onBlur={(e) => deriveCostFromPricebook(ingredientName, e.target.value)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="new-ingredient-category" className="text-sm font-medium">
-            Category
-          </label>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger id="new-ingredient-category">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {meta?.ingredient_categories.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="new-ingredient-stage" className="text-sm font-medium">
-            Stage
-          </label>
-          <Select value={stage} onValueChange={setStage}>
-            <SelectTrigger id="new-ingredient-stage">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {meta?.ingredient_stages.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="new-ingredient-date" className="text-sm font-medium">
-            Addition date
-          </label>
-          <Input
-            id="new-ingredient-date"
-            type="date"
-            value={additionDate}
-            onChange={(e) => setAdditionDate(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="new-ingredient-cost" className="text-sm font-medium">
+          <label htmlFor="new-ingredient-cost" className={cn(labelClass, 'flex-[1_1_110px]')}>
             Cost per unit
+            <input
+              id="new-ingredient-cost"
+              type="number"
+              step="any"
+              min="0"
+              value={unitCost}
+              onChange={(e) => {
+                setUnitCostTouched(true)
+                setUnitCost(e.target.value)
+              }}
+              className={cn(fieldClass, 'font-mono')}
+            />
           </label>
-          <Input
-            id="new-ingredient-cost"
-            type="number"
-            step="any"
-            min="0"
-            value={unitCost}
-            onChange={(e) => {
-              setUnitCostTouched(true)
-              setUnitCost(e.target.value)
-            }}
-          />
-        </div>
-        <div className="col-span-2 sm:col-span-4 space-y-1.5">
-          <label htmlFor="new-ingredient-notes" className="text-sm font-medium">
+          <SelectField label="Category" value={category} options={meta?.ingredient_categories} onChange={setCategory} className="flex-[1_1_140px]" />
+          <SelectField label="Stage" value={stage} options={meta?.ingredient_stages} onChange={setStage} className="flex-[1_1_120px]" />
+          <label htmlFor="new-ingredient-date" className={cn(labelClass, 'flex-[1_1_150px]')}>
+            Added on
+            <input
+              id="new-ingredient-date"
+              type="date"
+              value={additionDate}
+              onChange={(e) => setAdditionDate(e.target.value)}
+              className={fieldClass}
+            />
+          </label>
+          <label htmlFor="new-ingredient-notes" className={cn(labelClass, 'flex-[2_1_200px]')}>
             Notes
+            <input
+              id="new-ingredient-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className={fieldClass}
+            />
           </label>
-          <Input
-            id="new-ingredient-notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </div>
-        <Button type="submit" disabled={addIngredient.isPending} className="col-span-2 sm:col-span-1">
-          Add ingredient
-        </Button>
-      </form>
-    </div>
+          <div className="flex gap-2">
+            <button type="submit" disabled={addIngredient.isPending} className={cn(btnInk, 'min-h-11 rounded-[10px]')}>
+              Add ingredient
+            </button>
+            {list.length > 0 && (
+              <button type="button" onClick={() => setAdding(false)} className={btnQuiet}>
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      )}
+    </section>
   )
 }

@@ -31,6 +31,18 @@
 
   --ferment-empty: #E4D6B4;
   --shadow-color: 36 28% 22%;
+
+  /* Home-page shelf: a honey-tinted wall, ink outlines, oak planks. */
+  --honey: #F4B400;
+  --honey-soft: #FFF1C7;
+  --honey-wall: #FFF0C4;
+  --honey-line: #F0DC9C;
+  --ink: #21190C;
+  --cream: #FFF6DC;
+  --plank: #8A5A1E;
+  --plank-edge: #5E3A0E;
+  --bench: #6B4214;
+  --bench-edge: #4A2C0B;
 }
 
 .dark {
@@ -77,14 +89,25 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ferment-empty: var(--ferment-empty);
+  --color-honey: var(--honey);
+  --color-honey-soft: var(--honey-soft);
+  --color-honey-wall: var(--honey-wall);
+  --color-honey-line: var(--honey-line);
+  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+  --color-plank: var(--plank);
+  --color-plank-edge: var(--plank-edge);
+  --color-bench: var(--bench);
+  --color-bench-edge: var(--bench-edge);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Fraunces", ui-serif, Georgia, serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
 }
 
 @layer base {
