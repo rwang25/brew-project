@@ -45,15 +45,21 @@ def list_recipes(session: Session = Depends(get_session)) -> List[dict]:
     recipes = list(session.exec(select(Recipe).order_by(Recipe.name)))
     prices = price_lookup(session)
 
-    all_ingredients = list(session.exec(select(RecipeIngredient)))
+    all_ingredients = list(session.exec(select(RecipeIngredient).order_by(RecipeIngredient.id)))
     cost_by_recipe: dict[int, float] = {}
+    names_by_recipe: dict[int, List[str]] = {}
     for ing in all_ingredients:
+        names_by_recipe.setdefault(ing.recipe_id, []).append(ing.ingredient_name)
         cost = estimate_ingredient_cost(ing, prices)
         if cost is not None:
             cost_by_recipe[ing.recipe_id] = cost_by_recipe.get(ing.recipe_id, 0) + cost
 
     return [
-        {**recipe.model_dump(), "estimated_cost": cost_by_recipe.get(recipe.id)}
+        {
+            **recipe.model_dump(),
+            "estimated_cost": cost_by_recipe.get(recipe.id),
+            "ingredient_names": names_by_recipe.get(recipe.id, []),
+        }
         for recipe in recipes
     ]
 

@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-export function EditBrewTab({ brew }: { brew: Brew }) {
+export function EditBrewTab({ brew, onSaved }: { brew: Brew; onSaved?: () => void }) {
   const { data: meta } = useMeta()
   const updateBrew = useUpdateBrew(brew.id)
   const deleteBrew = useDeleteBrew()
@@ -75,17 +75,18 @@ export function EditBrewTab({ brew }: { brew: Brew }) {
       process_notes: form.process_notes || null,
     })
     toast.success('Brew updated.')
+    onSaved?.()
   }
 
   const handleDelete = async () => {
     if (!confirm(`Delete "${brew.name}"? This cannot be undone.`)) return
     await deleteBrew.mutateAsync(brew.id)
     toast.success('Brew deleted.')
-    navigate('/')
+    navigate('/brews')
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label>Brew name *</Label>

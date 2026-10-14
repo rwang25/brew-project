@@ -10,6 +10,8 @@ import type {
   Ingredient,
   IngredientCreateInput,
   IngredientPrice,
+  IngredientPriceUpsertInput,
+  IngredientUsage,
   IngredientUpdateInput,
   Meta,
   NutrientAddition,
@@ -252,9 +254,16 @@ export function useIngredientPrices() {
 export function useUpsertIngredientPrice() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: { ingredient_name: string; unit: string; unit_cost: number }) =>
+    mutationFn: (input: IngredientPriceUpsertInput) =>
       api.post<IngredientPrice>('/ingredient-prices', input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ingredient-prices'] }),
+  })
+}
+
+export function useIngredientUsage() {
+  return useQuery({
+    queryKey: ['ingredient-usage'],
+    queryFn: () => api.get<IngredientUsage[]>('/ingredient-usage'),
   })
 }
 
